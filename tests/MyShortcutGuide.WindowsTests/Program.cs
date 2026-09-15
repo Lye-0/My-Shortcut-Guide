@@ -44,6 +44,34 @@ internal static class Program
                 Check(result == DialogResult.OK && entry.Ctrl && entry.KeyCode == 70 && entry.Name == "検索: 日本語" && entry.Recommended && dialog.SectionId == sections[2].Id);
                 Console.WriteLine("PASS real shortcut form save, modifiers, main key, section and labels");
             }
+            using (var editor = new EditorForm(new AppController(), () => { }, () => { }))
+            {
+                editor.Shown += (_, _) => editor.BeginInvoke(() =>
+                {
+                    var controls = All(editor).ToArray();
+                    var input = controls.OfType<TextBox>().Single(c => c.AccessibleName == "選択セクション内を検索");
+                    Check(input.Parent is InputFrame && input.Left > 0 && input.Top > 0);
+                    Check(input.Bottom < input.Parent!.ClientSize.Height);
+                    var actions = controls.Single(c => c.Name == "AppActions");
+                    Check(actions.Parent!.Name == "Sidebar");
+                    foreach (var button in All(actions).OfType<Button>())
+                        Check(button.Left >= 0 && button.Right <= actions.ClientSize.Width && button.Bottom <= actions.ClientSize.Height);
+                    foreach (var size in new[] { new Size(1080, 740), new Size(950, 650) })
+                    {
+                        editor.ClientSize = new Size((int)(size.Width * editor.DeviceDpi / 96f), (int)(size.Height * editor.DeviceDpi / 96f));
+                        editor.PerformLayout();
+                        Check(input.Height >= input.PreferredHeight && input.Top > 0);
+                    }
+                    input.Focus(); Check(input.Focused);
+                    var heading = controls.OfType<Label>().First(c => c.Font.Size >= 26);
+                    typeof(Control).GetMethod("OnMouseDown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+                        .Invoke(heading, [new MouseEventArgs(MouseButtons.Left, 1, 1, 1, 0)]);
+                    Check(!input.Focused);
+                    editor.Dispose();
+                });
+                editor.ShowDialog();
+                Console.WriteLine("PASS sidebar action scope, padded search, narrow layout and background focus release");
+            }
             var settings = new AppSettings();
             using (var dialog = new SettingsDialog(settings))
             {

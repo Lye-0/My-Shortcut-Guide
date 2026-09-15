@@ -41,6 +41,14 @@ internal static class Theme
         panel.Controls.AddRange(controls);
         return panel;
     }
+    public static Button IconButton(string glyph, string label, Action action)
+    {
+        var button = Button(glyph, action);
+        button.AutoSize = false; button.Size = new Size(34, 36); button.MinimumSize = Size.Empty;
+        button.Padding = Padding.Empty; button.Margin = new Padding(2, 3, 2, 3);
+        button.Font = new Font("Segoe Fluent Icons", 12); button.AccessibleName = label;
+        return button;
+    }
     public static void StyleForm(Form form)
     {
         form.SuspendLayout();
@@ -55,6 +63,20 @@ internal static class Theme
         form.ResumeLayout(false);
         form.PerformAutoScale();
         form.PerformLayout();
+        WireBackgroundFocus(form, form);
+    }
+    private static void WireBackgroundFocus(Form form, Control control)
+    {
+        if (control is InputFrame) return;
+        if (control is Panel or System.Windows.Forms.Label or Form)
+            control.MouseDown += (_, _) =>
+            {
+                if (control.Tag is Control associatedInput) { associatedInput.Select(); return; }
+                var background = form.Controls.OfType<BackgroundSurface>().FirstOrDefault();
+                if (background is not null) background.Focus();
+                else { form.ActiveControl = null; form.Focus(); }
+            };
+        foreach (Control child in control.Controls) WireBackgroundFocus(form, child);
     }
     public static TextBox Input(string label, string value = "", bool multiline = false) => new()
     {
@@ -64,6 +86,36 @@ internal static class Theme
     };
     public static void Error(IWin32Window? owner, Exception ex) =>
         MessageBox.Show(owner, ex.Message, "操作を完了できませんでした", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+}
+
+internal sealed class BackgroundSurface : TableLayoutPanel
+{
+    public BackgroundSurface() { SetStyle(ControlStyles.Selectable, true); TabStop = false; AccessibleName = "画面の背景"; }
+}
+
+internal sealed class InputFrame : Panel
+{
+    private readonly TextBox input;
+    public InputFrame(TextBox input)
+    {
+        this.input = input; BackColor = Theme.Surface; Padding = Padding.Empty;
+        input.Dock = DockStyle.None; input.BorderStyle = BorderStyle.None; input.Margin = Padding.Empty;
+        Controls.Add(input); input.GotFocus += (_, _) => Invalidate(); input.LostFocus += (_, _) => Invalidate();
+        MouseDown += (_, _) => input.Focus();
+    }
+    protected override void OnLayout(LayoutEventArgs e)
+    {
+        base.OnLayout(e);
+        if (input is null) return;
+        var inset = (int)(12 * DeviceDpi / 96f);
+        input.SetBounds(inset, Math.Max(0, (ClientSize.Height - input.PreferredHeight) / 2), Math.Max(0, ClientSize.Width - 2 * inset), input.PreferredHeight);
+    }
+    protected override void OnPaint(PaintEventArgs e)
+    {
+        base.OnPaint(e);
+        using var pen = new Pen(ContainsFocus ? Theme.Accent : Theme.Border);
+        e.Graphics.DrawRectangle(pen, 0, 0, Math.Max(0, Width - 1), Math.Max(0, Height - 1));
+    }
 }
 
 internal sealed class SectionList : ListBox

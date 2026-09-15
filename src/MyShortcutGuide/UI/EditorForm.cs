@@ -6,7 +6,7 @@ namespace MyShortcutGuide.UI;
 internal sealed class EditorForm : Form
 {
     private readonly AppController controller;
-    private readonly Action exit;
+    private readonly ToolTip tips = new() { InitialDelay = 400, ReshowDelay = 100, AutoPopDelay = 8000, ShowAlways = true };
     private readonly SectionList sections = new();
     private readonly ShortcutList shortcuts = new();
     private readonly Label heading = Theme.Label("Favorites", 26);
@@ -16,68 +16,92 @@ internal sealed class EditorForm : Form
     private readonly TextBox search = Theme.Input("選択セクション内を検索");
     private readonly List<Control> mutations = [];
     private Button edit = null!, remove = null!, up = null!, down = null!, add = null!;
-    private Button sectionRename = null!, sectionRemove = null!, sectionUp = null!, sectionDown = null!;
+    private Button sectionRename = null!, sectionRemove = null!;
     private bool refreshing;
     private Section? SelectedSection => sections.SelectedItem as Section;
     private ShortcutEntry? SelectedShortcut => shortcuts.SelectedItem as ShortcutEntry;
 
     public EditorForm(AppController controller, Action exit, Action openGuide)
     {
-        this.controller = controller; this.exit = exit;
+        this.controller = controller;
         Text = "My Shortcut Guide"; Theme.StyleForm(this); ClientSize = new Size(1080, 740); MinimumSize = new Size(950, 650);
-        var shell = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
+        var shell = new BackgroundSurface { Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 1, Margin = Padding.Empty };
         shell.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 270)); shell.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
         Controls.Add(shell);
-        var sidebar = new TableLayoutPanel { Dock = DockStyle.Fill, BackColor = Theme.Sidebar, Padding = new Padding(18, 28, 18, 18), ColumnCount = 1, RowCount = 6 };
-        sidebar.RowStyles.Add(new(SizeType.Absolute, 102)); sidebar.RowStyles.Add(new(SizeType.Absolute, 32));
-        sidebar.RowStyles.Add(new(SizeType.Percent, 100)); sidebar.RowStyles.Add(new(SizeType.Absolute, 112));
-        sidebar.RowStyles.Add(new(SizeType.Absolute, 1)); sidebar.RowStyles.Add(new(SizeType.Absolute, 108));
+        var sidebar = new TableLayoutPanel { Name = "Sidebar", Dock = DockStyle.Fill, BackColor = Theme.Sidebar, Padding = new Padding(18, 24, 18, 18), ColumnCount = 1, RowCount = 5 };
+        sidebar.RowStyles.Add(new(SizeType.Absolute, 94)); sidebar.RowStyles.Add(new(SizeType.Absolute, 50));
+        sidebar.RowStyles.Add(new(SizeType.Percent, 100)); sidebar.RowStyles.Add(new(SizeType.Absolute, 1));
+        sidebar.RowStyles.Add(new(SizeType.Absolute, 212));
         shell.Controls.Add(sidebar, 0, 0);
         var brand = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         brand.Controls.Add(Theme.Label("MY SHORTCUT GUIDE", 10, Theme.Accent));
         brand.Controls.Add(Theme.Label("いつもの操作を、\nすぐ手元に。", 17));
-        sidebar.Controls.Add(brand, 0, 0); sidebar.Controls.Add(Theme.Label("ライブラリ", 9, Theme.Muted), 0, 1);
-        sidebar.Controls.Add(sections, 0, 2);
-        var sectionActions = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(0, 12, 0, 0) };
-        var sectionAdd = Theme.Button("＋ セクション", () => Run(() => AddSectionAsync()));
-        sectionRename = Theme.Button("名前変更", () => Run(RenameSectionAsync));
-        sectionRemove = Theme.Button("削除", () => Run(DeleteSectionAsync));
-        sectionUp = Theme.Button("↑", () => Run(() => MoveSectionAsync(-1))); sectionUp.MinimumSize = new Size(38, 38); sectionUp.AccessibleName = "セクションを上へ";
-        sectionDown = Theme.Button("↓", () => Run(() => MoveSectionAsync(1))); sectionDown.MinimumSize = new Size(38, 38); sectionDown.AccessibleName = "セクションを下へ";
-        sectionActions.Controls.Add(Theme.Row(sectionAdd, sectionUp, sectionDown));
-        var row2 = Theme.Row(sectionRename, sectionRemove); row2.Padding = new Padding(0, 8, 0, 0); sectionActions.Controls.Add(row2);
-        sidebar.Controls.Add(sectionActions, 0, 3);
-        sidebar.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = Theme.Border }, 0, 4);
-        var bottom = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(0, 18, 0, 0) };
-        var settings = Theme.Button("設定", () => Run(SettingsAsync));
-        bottom.Controls.Add(Theme.Row(settings, Theme.Button("Exit", exit)));
-        var resident = Theme.Label("●  バックグラウンドで待機", 9, Theme.Muted); resident.Margin = new Padding(0, 12, 0, 0); bottom.Controls.Add(resident);
-        sidebar.Controls.Add(bottom, 0, 5);
+        sidebar.Controls.Add(brand, 0, 0);
+        var sectionActions = new TableLayoutPanel { Name = "SectionActions", Dock = DockStyle.Fill, ColumnCount = 4, RowCount = 1, Margin = Padding.Empty };
+        sectionActions.ColumnStyles.Add(new(SizeType.Percent, 100));
+        for (var i = 0; i < 3; i++) sectionActions.ColumnStyles.Add(new(SizeType.Absolute, 38));
+        var sectionLabel = Theme.Label("セクション", 10, Theme.Muted); sectionLabel.AutoSize = false; sectionLabel.Dock = DockStyle.Fill; sectionLabel.TextAlign = ContentAlignment.MiddleLeft;
+        var sectionAdd = Theme.IconButton("\uE710", "セクションを追加", () => Run(AddSectionAsync));
+        sectionRename = Theme.IconButton("\uE70F", "選択セクションの名称変更", () => Run(RenameSectionAsync));
+        sectionRemove = Theme.IconButton("\uE74D", "選択セクションを削除", () => Run(DeleteSectionAsync));
+        sectionActions.Controls.Add(sectionLabel, 0, 0); sectionActions.Controls.Add(sectionAdd, 1, 0);
+        sectionActions.Controls.Add(sectionRename, 2, 0); sectionActions.Controls.Add(sectionRemove, 3, 0);
+        foreach (var button in new[] { sectionAdd, sectionRename, sectionRemove }) tips.SetToolTip(button, button.AccessibleName);
+        sidebar.Controls.Add(sectionActions, 0, 1); sidebar.Controls.Add(sections, 0, 2);
+        tips.SetToolTip(sections, "セクションを選択 · Alt + 上下キーで並べ替え");
+        sections.KeyDown += (_, e) =>
+        {
+            if (e.Alt && e.KeyCode is Keys.Up or Keys.Down)
+            {
+                e.Handled = true; e.SuppressKeyPress = true;
+                Run(() => MoveSectionAsync(e.KeyCode == Keys.Up ? -1 : 1));
+            }
+        };
+        sidebar.Controls.Add(new Panel { Dock = DockStyle.Fill, BackColor = Theme.Border }, 0, 3);
+        var globalActions = new TableLayoutPanel { Name = "AppActions", Dock = DockStyle.Fill, ColumnCount = 2, RowCount = 5, Padding = new Padding(0, 12, 0, 0), Margin = Padding.Empty };
+        globalActions.ColumnStyles.Add(new(SizeType.Percent, 50)); globalActions.ColumnStyles.Add(new(SizeType.Percent, 50));
+        for (var i = 0; i < 4; i++) globalActions.RowStyles.Add(new(SizeType.Absolute, 42));
+        globalActions.RowStyles.Add(new(SizeType.Percent, 100));
+        var guide = Theme.Button("Shortcut Guide を開く", openGuide);
+        var import = Theme.Button("Import", () => Run(ImportAsync)); var export = Theme.Button("Export", Export);
+        var regenerate = Theme.Button("ガイドへ再反映", () => Run(controller.RegenerateAsync));
+        var settings = Theme.Button("設定", () => Run(SettingsAsync)); var quit = Theme.Button("Exit", exit);
+        foreach (var button in new[] { guide, import, export, regenerate, settings, quit })
+        {
+            button.AutoSize = false; button.Dock = DockStyle.Fill; button.Margin = new Padding(0, 0, 4, 5); button.MinimumSize = Size.Empty;
+        }
+        globalActions.Controls.Add(guide, 0, 0); globalActions.SetColumnSpan(guide, 2);
+        globalActions.Controls.Add(import, 0, 1); globalActions.Controls.Add(export, 1, 1);
+        globalActions.Controls.Add(regenerate, 0, 2); globalActions.SetColumnSpan(regenerate, 2);
+        globalActions.Controls.Add(settings, 0, 3); globalActions.Controls.Add(quit, 1, 3);
+        var resident = Theme.Label("●  バックグラウンドで待機", 9, Theme.Muted); resident.Margin = Padding.Empty;
+        globalActions.Controls.Add(resident, 0, 4); globalActions.SetColumnSpan(resident, 2); sidebar.Controls.Add(globalActions, 0, 4);
+        tips.SetToolTip(guide, "PowerToys Shortcut Guide を開く");
+        tips.SetToolTip(import, "JSONからライブラリ全体を読み込む"); tips.SetToolTip(export, "ライブラリ全体をJSONへ書き出す");
+        tips.SetToolTip(regenerate, "ライブラリ全体をShortcut Guideへ再反映");
+        tips.SetToolTip(settings, "自動起動・ウィンドウ・ガイド表示の設定"); tips.SetToolTip(quit, "常駐アプリを終了");
 
-        var main = new TableLayoutPanel { Dock = DockStyle.Fill, Padding = new Padding(30, 26, 30, 18), ColumnCount = 1, RowCount = 7 };
-        foreach (var h in new[] { 48, 100, 58, 44 }) main.RowStyles.Add(new(SizeType.Absolute, h));
+        var main = new TableLayoutPanel { Name = "SectionContent", Dock = DockStyle.Fill, Padding = new Padding(30, 26, 30, 18), ColumnCount = 1, RowCount = 6 };
+        foreach (var h in new[] { 90, 58, 56 }) main.RowStyles.Add(new(SizeType.Absolute, h));
         main.RowStyles.Add(new(SizeType.Percent, 100)); main.RowStyles.Add(new(SizeType.Absolute, 62)); main.RowStyles.Add(new(SizeType.Absolute, 48));
         shell.Controls.Add(main, 1, 0);
-        var import = Theme.Button("Import", () => Run(ImportAsync)); var export = Theme.Button("Export", Export);
-        var guide = Theme.Button("Shortcut Guide を開く", openGuide);
-        main.Controls.Add(Theme.Row(guide, import, export), 0, 0);
-        var titles = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false, Padding = new Padding(0, 14, 0, 0) };
-        heading.Margin = Padding.Empty; titles.Controls.Add(heading); titles.Controls.Add(subtitle); main.Controls.Add(titles, 0, 1);
+        var titles = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
+        heading.Margin = Padding.Empty; titles.Controls.Add(heading); titles.Controls.Add(subtitle); main.Controls.Add(titles, 0, 0);
         add = Theme.Button("＋ ショートカット", () => Run(() => EditShortcutAsync(false)), true);
-        var regenerate = Theme.Button("ガイドへ再反映", () => Run(controller.RegenerateAsync));
-        main.Controls.Add(Theme.Row(add, regenerate), 0, 2);
-        search.PlaceholderText = "このセクションを検索"; search.Margin = new Padding(0, 0, 0, 12);
-        search.TextChanged += (_, _) => RefreshShortcuts(); main.Controls.Add(search, 0, 3);
+        main.Controls.Add(Theme.Row(add), 0, 1);
+        search.PlaceholderText = "このセクションを検索";
+        search.TextChanged += (_, _) => RefreshShortcuts();
+        main.Controls.Add(new InputFrame(search) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) }, 0, 2);
         var listPanel = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
         listPanel.Controls.Add(shortcuts); empty.Dock = DockStyle.Fill; empty.TextAlign = ContentAlignment.MiddleCenter; empty.AutoSize = false;
-        listPanel.Controls.Add(empty); main.Controls.Add(listPanel, 0, 4);
+        listPanel.Controls.Add(empty); main.Controls.Add(listPanel, 0, 3);
         edit = Theme.Button("編集", () => Run(() => EditShortcutAsync(true)));
         remove = Theme.Button("削除", () => Run(DeleteShortcutAsync));
         up = Theme.Button("↑ 上へ", () => Run(() => MoveShortcutAsync(-1)));
         down = Theme.Button("↓ 下へ", () => Run(() => MoveShortcutAsync(1)));
-        var itemActions = Theme.Row(edit, remove, up, down); itemActions.Padding = new Padding(0, 14, 0, 0); main.Controls.Add(itemActions, 0, 5);
-        status.AutoSize = false; status.Dock = DockStyle.Fill; main.Controls.Add(status, 0, 6);
-        mutations.AddRange([sectionAdd, sectionRename, sectionRemove, sectionUp, sectionDown, settings, import, regenerate, add, edit, remove, up, down]);
+        var itemActions = Theme.Row(edit, remove, up, down); itemActions.Padding = new Padding(0, 14, 0, 0); main.Controls.Add(itemActions, 0, 4);
+        status.AutoSize = false; status.Dock = DockStyle.Fill; main.Controls.Add(status, 0, 5);
+        mutations.AddRange([sectionAdd, sectionRename, sectionRemove, settings, import, regenerate, add, edit, remove, up, down]);
         sections.SelectedIndexChanged += (_, _) => { if (!refreshing) { search.Clear(); RefreshShortcuts(); } };
         shortcuts.SelectedIndexChanged += (_, _) => UpdateActions();
         shortcuts.DoubleClick += (_, _) => { if (SelectedShortcut is not null) Run(() => EditShortcutAsync(true)); };
@@ -91,6 +115,7 @@ internal sealed class EditorForm : Form
         };
         RefreshAll();
         Theme.CompleteLayout(this);
+        Disposed += (_, _) => tips.Dispose();
     }
     private void OnChanged(object? sender, EventArgs e) { if (!IsDisposed) RefreshAll(); }
     private void RefreshAll(Guid? sectionId = null, Guid? shortcutId = null)
@@ -115,7 +140,7 @@ internal sealed class EditorForm : Form
         if (section is not null) shortcuts.Items.AddRange(section.Shortcuts.Where(s => string.IsNullOrEmpty(query) || $"{s.Name} {s.Description} {s.Gesture}".Contains(query, StringComparison.OrdinalIgnoreCase)).Cast<object>().ToArray());
         for (var i = 0; i < shortcuts.Items.Count; i++) if (((ShortcutEntry)shortcuts.Items[i]).Id == id) shortcuts.SelectedIndex = i;
         shortcuts.EndUpdate();
-        empty.Text = query.Length > 0 ? "一致するショートカットがありません" : section is null ? "「＋ セクション」でライブラリを作りましょう。" : "まだショートカットがありません\n「＋ ショートカット」で、最初のキーを登録しましょう。";
+        empty.Text = query.Length > 0 ? "一致するショートカットがありません" : section is null ? "セクション見出しの「＋」でライブラリを作りましょう。" : "まだショートカットがありません\n「＋ ショートカット」で、最初のキーを登録しましょう。";
         empty.Visible = shortcuts.Items.Count == 0; shortcuts.Visible = !empty.Visible; UpdateActions();
     }
     private void UpdateActions()
@@ -127,8 +152,6 @@ internal sealed class EditorForm : Form
         up.Enabled = ready && i is not null && search.Text.Length == 0 && s!.Shortcuts.IndexOf(i) > 0;
         down.Enabled = ready && i is not null && search.Text.Length == 0 && s!.Shortcuts.IndexOf(i) < s.Shortcuts.Count - 1;
         sectionRename.Enabled = sectionRemove.Enabled = ready && s is not null;
-        sectionUp.Enabled = ready && sections.SelectedIndex > 0;
-        sectionDown.Enabled = ready && s is not null && sections.SelectedIndex < sections.Items.Count - 1;
     }
     private async void Run(Func<Task> action)
     {

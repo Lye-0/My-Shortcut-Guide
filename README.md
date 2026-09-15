@@ -14,8 +14,9 @@ EXEは仮アイコン・未署名です。アイコンの差し替えは `src/My
 
 ## 操作
 
-- セクション：追加、名前変更、削除、上下移動。
+- セクション見出しのアイコンから追加・名称変更・削除。一覧は上下キーで選択、Alt＋上下キーで並べ替え。
 - ショートカット：追加、編集、削除、上下移動、別セクションへ移動。
+- ガイド起動・再反映・Import/Export・設定・Exitはサイドバー下部に配置。アイコンやアプリ操作にはツールチップを表示します。検索欄には内側の余白があり、入力欄の外の余白や見出しをクリックするとフォーカスを外せます。
 - 選択セクション内の検索：`Ctrl+F`。追加：`Ctrl+N`。一覧の編集：ダブルクリックまたは`F2`。
 - 「キーを記録」は記録画面が開いている間だけキーを受け取ります。全キーを離すと確定。Escも登録可能で、キャンセルは画面のボタンを使います。Ctrl+Alt+Delete等のOS予約キーは手動選択してください。IME/JISのキー表示はキーボード配列に依存します。
 - Recommendedをオンにした項目はガイドのおすすめ欄にも表示されます。
@@ -64,7 +65,7 @@ dotnet run --project tests/MyShortcutGuide.Tests -c Release
 pwsh -File scripts/publish.ps1
 ```
 
-`artifacts/MyShortcutGuide-0.1.0-win-x64/` にself-contained single-file EXE、README、LICENSEを生成し、同名ZIPとSHA-256チェックサムも作ります。単一EXEにネイティブライブラリを同梱するため、実行時に.NETの一時展開が発生します。トリミングはWinFormsの互換性維持のため無効です。
+`artifacts/MyShortcutGuide-0.1.1-win-x64/` にself-contained single-file EXE、README、LICENSEを生成し、同名ZIPとSHA-256チェックサムも作ります。単一EXEにネイティブライブラリを同梱するため、実行時に.NETの一時展開が発生します。トリミングはWinFormsの互換性維持のため無効です。
 
 GitHub Actionsはビルド・テスト・配布ZIPの生成に対応。`v*` タグでGitHub Releaseのドラフトと添付ファイルを作成します。署名証明書や発行先の認証情報は含めません。v1はポータブル配布で、ユーザーデータは配布フォルダーから分離しているため、後からinstaller/MSIXのライフサイクルへ移行できます。MSIXでは自動起動アダプターの差し替えが必要です。
 

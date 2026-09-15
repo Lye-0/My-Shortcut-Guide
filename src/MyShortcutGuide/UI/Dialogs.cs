@@ -4,7 +4,7 @@ namespace MyShortcutGuide.UI;
 
 internal class DialogBase : Form
 {
-    protected readonly TableLayoutPanel Content = new() { Dock = DockStyle.Fill, ColumnCount = 1, AutoScroll = true, Padding = new Padding(28, 22, 28, 16) };
+    protected readonly BackgroundSurface Content = new() { Dock = DockStyle.Fill, ColumnCount = 1, AutoScroll = true, Padding = new Padding(28, 22, 28, 16) };
     protected readonly FlowLayoutPanel Footer = new() { Dock = DockStyle.Bottom, Height = 70, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(20, 12, 20, 16) };
     protected readonly Label ErrorLabel = Theme.Label("", 10, Color.FromArgb(255, 180, 160));
     protected DialogBase(string title, Size size)
@@ -15,7 +15,8 @@ internal class DialogBase : Form
     }
     protected void AddField(string label, Control control, int height)
     {
-        var row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, 34)); Content.Controls.Add(Theme.Label(label), 0, row);
+        var fieldLabel = Theme.Label(label); fieldLabel.Tag = control;
+        var row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, 34)); Content.Controls.Add(fieldLabel, 0, row);
         row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, height)); Content.Controls.Add(control, 0, row);
     }
     protected override void OnLoad(EventArgs e)
