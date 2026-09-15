@@ -53,6 +53,26 @@ internal static class Program
                     var input = controls.OfType<TextBox>().Single(c => c.AccessibleName == "選択セクション内を検索");
                     Check(input.Parent is InputFrame && input.Left > 0 && input.Top > 0);
                     Check(input.Bottom < input.Parent!.ClientSize.Height);
+                    var list = controls.OfType<ShortcutList>().Single();
+                    // Use the actual editor wiring without saving or changing user data.
+                    var savedItems = list.Items.Cast<object>().ToArray();
+                    list.Items.Clear(); list.Items.Add(new ShortcutEntry { Name = "Hit feedback", KeyCode = 65 });
+                    list.Visible = true; list.BringToFront();
+                    foreach (var reorder in new[] { true, false })
+                    {
+                        list.ReorderEnabled = reorder;
+                        list.SelectedIndex = 0; list.Focus();
+                        var y = list.GetItemRectangle(0).Bottom + 20;
+                        ScrollNative.SendMessage(list.Handle, 0x201, 1, (nint)((y << 16) | 20));
+                        ScrollNative.SendMessage(list.Handle, 0x202, 0, (nint)((y << 16) | 20));
+                        Check(list.SelectedIndex == -1 && !list.Focused && !list.Capture);
+                        Check(!controls.OfType<Button>().Single(c => c.Text == "編集").Enabled);
+                        Check(!controls.OfType<Button>().Single(c => c.Text == "削除").Enabled);
+                        ScrollNative.SendMessage(list.Handle, 0x201, 1, (nint)((30 << 16) | 20));
+                        ScrollNative.SendMessage(list.Handle, 0x202, 0, (nint)((30 << 16) | 20));
+                        Check(list.SelectedIndex == 0 && list.Focused && !list.Capture);
+                    }
+                    list.Items.Clear(); list.Items.AddRange(savedItems);
                     var actions = controls.Single(c => c.Name == "AppActions");
                     Check(actions.Parent!.Name == "Sidebar");
                     foreach (var button in All(actions).OfType<Button>())

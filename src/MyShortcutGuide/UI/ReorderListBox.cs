@@ -17,6 +17,7 @@ internal class ReorderListBox : ThemedListBox
     public bool ReorderEnabled { get; set; } = true;
     public event EventHandler<ReorderEventArgs>? ReorderRequested;
     public event Action<int>? ItemActivated;
+    public event Action? BlankClicked;
     protected virtual Rectangle ItemHitBounds(int index) => GetItemRectangle(index);
     internal int HitTestItem(Point point)
     {
@@ -33,13 +34,16 @@ internal class ReorderListBox : ThemedListBox
             var point = new Point(unchecked((short)(long)m.LParam), unchecked((short)((long)m.LParam >> 16)));
             var index = HitTestItem(point); ResetDrag();
             if (index >= 0) { SelectedIndex = index; ItemActivated?.Invoke(index); }
+            else BlankClicked?.Invoke();
             return;
         }
-        if (m.Msg == 0x201 && ReorderEnabled)
+        if (m.Msg == 0x201)
         {
             var point = new Point(unchecked((short)(long)m.LParam), unchecked((short)((long)m.LParam >> 16)));
-            Focus(); var index = HitTestItem(point); if (index >= 0) SelectedIndex = index;
-            start = point; item = index >= 0 ? Items[index] : null; Capture = item is not null;
+            var index = HitTestItem(point);
+            if (index < 0) { ResetDrag(); BlankClicked?.Invoke(); return; }
+            Focus(); SelectedIndex = index;
+            start = point; item = ReorderEnabled ? Items[index] : null; Capture = item is not null;
             return;
         }
         base.WndProc(ref m);

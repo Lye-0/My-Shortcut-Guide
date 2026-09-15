@@ -238,6 +238,6 @@ internal sealed class ShortcutList : ReorderListBox
             x += width + S(6);
         }
         DrawInsertion(e);
-        if ((e.State & DrawItemState.Focus) != 0) ControlPaint.DrawFocusRectangle(e.Graphics, card, Theme.Text, Theme.Surface);
+        if (Focused && ShowFocusCues && selected && (e.State & DrawItemState.Focus) != 0) ControlPaint.DrawFocusRectangle(e.Graphics, card, Theme.Text, Theme.Surface);
     }
 }

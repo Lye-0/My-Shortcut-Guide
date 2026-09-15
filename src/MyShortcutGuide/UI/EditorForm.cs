@@ -102,6 +102,7 @@ internal sealed class EditorForm : Form
         mutations.AddRange([sectionAdd, sectionRename, sectionRemove, settings, import, regenerate, add, edit, remove]);
         sections.SelectedIndexChanged += (_, _) => { if (!refreshing) { search.Clear(); RefreshShortcuts(); } };
         shortcuts.SelectedIndexChanged += (_, _) => UpdateActions();
+        shortcuts.BlankClicked += () => { shortcuts.ClearSelected(); shell.Focus(); };
         shortcuts.ItemActivated += _ => Run(() => EditShortcutAsync(true));
         sections.ReorderRequested += (_, e) => Run(async () =>
         {
@@ -114,7 +115,7 @@ internal sealed class EditorForm : Form
             var doc = DocumentStore.Clone(controller.Document);
             if (ListOrder.Move(doc.Sections.Single(s => s.Id == selected.Id).Shortcuts, e.From, e.Insertion)) await controller.SaveAsync(doc);
         });
-        tips.SetToolTip(shortcuts, "ドラッグで並べ替え · 検索中は並べ替えできません · Alt + 上下キーでも移動できます");
+        tips.SetToolTip(subtitle, "ドラッグで並べ替え · 検索中は並べ替えできません · Alt + 上下キーでも移動できます");
         shortcuts.KeyDown += (_, e) =>
         {
             if (e.Alt && e.KeyCode is Keys.Up or Keys.Down)
