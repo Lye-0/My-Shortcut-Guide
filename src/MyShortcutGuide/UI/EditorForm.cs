@@ -102,7 +102,7 @@ internal sealed class EditorForm : Form
         mutations.AddRange([sectionAdd, sectionRename, sectionRemove, settings, import, regenerate, add, edit, remove]);
         sections.SelectedIndexChanged += (_, _) => { if (!refreshing) { search.Clear(); RefreshShortcuts(); } };
         shortcuts.SelectedIndexChanged += (_, _) => UpdateActions();
-        shortcuts.DoubleClick += (_, _) => { if (SelectedShortcut is not null) Run(() => EditShortcutAsync(true)); };
+        shortcuts.ItemActivated += _ => Run(() => EditShortcutAsync(true));
         sections.ReorderRequested += (_, e) => Run(async () =>
         {
             var doc = DocumentStore.Clone(controller.Document);

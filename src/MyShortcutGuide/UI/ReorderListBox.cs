@@ -16,12 +16,29 @@ internal class ReorderListBox : ThemedListBox
     [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
     public bool ReorderEnabled { get; set; } = true;
     public event EventHandler<ReorderEventArgs>? ReorderRequested;
+    public event Action<int>? ItemActivated;
+    protected virtual Rectangle ItemHitBounds(int index) => GetItemRectangle(index);
+    internal int HitTestItem(Point point)
+    {
+        if (!ClientRectangle.Contains(point)) return -1;
+        var index = IndexFromPoint(point);
+        return index >= 0 && ItemHitBounds(index).Contains(point) ? index : -1;
+    }
     protected override void WndProc(ref Message m)
     {
+        // Do not let the native list box start its own mouse tracking loop on
+        // the second press: it conflicts with our drag capture and retains selection in blank space.
+        if (m.Msg == 0x203)
+        {
+            var point = new Point(unchecked((short)(long)m.LParam), unchecked((short)((long)m.LParam >> 16)));
+            var index = HitTestItem(point); ResetDrag();
+            if (index >= 0) { SelectedIndex = index; ItemActivated?.Invoke(index); }
+            return;
+        }
         if (m.Msg == 0x201 && ReorderEnabled)
         {
             var point = new Point(unchecked((short)(long)m.LParam), unchecked((short)((long)m.LParam >> 16)));
-            Focus(); var index = IndexFromPoint(point); if (index >= 0) SelectedIndex = index;
+            Focus(); var index = HitTestItem(point); if (index >= 0) SelectedIndex = index;
             start = point; item = index >= 0 ? Items[index] : null; Capture = item is not null;
             return;
         }

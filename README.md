@@ -65,7 +65,7 @@ dotnet run --project tests/MyShortcutGuide.Tests -c Release
 pwsh -File scripts/publish.ps1
 ```
 
-`artifacts/MyShortcutGuide-0.1.3-win-x64/` にself-contained single-file EXE、README、LICENSEを生成し、同名ZIPとSHA-256チェックサムも作ります。単一EXEにネイティブライブラリを同梱するため、実行時に.NETの一時展開が発生します。トリミングはWinFormsの互換性維持のため無効です。
+`artifacts/MyShortcutGuide-0.1.4-win-x64/` にself-contained single-file EXE、README、LICENSEを生成し、同名ZIPとSHA-256チェックサムも作ります。単一EXEにネイティブライブラリを同梱するため、実行時に.NETの一時展開が発生します。トリミングはWinFormsの互換性維持のため無効です。
 
 GitHub Actionsはビルド・テスト・配布ZIPの生成に対応。`v*` タグでGitHub Releaseのドラフトと添付ファイルを作成します。署名証明書や発行先の認証情報は含めません。v1はポータブル配布で、ユーザーデータは配布フォルダーから分離しているため、後からinstaller/MSIXのライフサイクルへ移行できます。MSIXでは自動起動アダプターの差し替えが必要です。
 
@@ -86,3 +86,7 @@ MIT。PowerToysとは独立したコミュニティアプリです。
 - 入力欄は控えめな角丸、キー設定は区切り線と「組み合わせの結果」でまとめています。
 - アイコンの内側は均一な #282828、外側は透明。16〜256pxのICOと1024px PNGを同梱ソースに保存しています。
 - アイコン再生成: PowerShell 7.6 (.NET 10) で `./scripts/build-icon.ps1 -OutputDirectory ./src/MyShortcutGuide/Assets`。
+
+### 0.1.4
+
+ショートカットの編集はブロック内のダブルクリック、編集ボタン、F2から開きます。一覧の空白やブロック間の隙間をクリックしても編集を開きません。

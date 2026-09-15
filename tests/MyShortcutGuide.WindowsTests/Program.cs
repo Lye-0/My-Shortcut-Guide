@@ -128,6 +128,32 @@ internal static class Program
                 selectorTest.ShowDialog();
             }
             Console.WriteLine("PASS popup commit/cancel and candidate list scrolling");
+            using (var hitForm = new Form { ClientSize = new Size(500, 400) })
+            {
+                var list = new ShortcutList(); list.Items.Add(new ShortcutEntry { Name = "Selected", KeyCode = 65 });
+                hitForm.Controls.Add(list); var activations = 0;
+                list.ItemActivated += _ => activations++;
+                hitForm.Shown += (_, _) => hitForm.BeginInvoke(() =>
+                {
+                    list.SelectedIndex = 0;
+                    void Send(int message, int x, int y) => ScrollNative.SendMessage(list.Handle, message, message == 0x202 ? 0 : 1, (nint)((y << 16) | x));
+                    var row = list.GetItemRectangle(0);
+                    foreach (var point in new[] { new Point(30, row.Bottom + 30), new Point(30, row.Top + 1), new Point(list.Width - 1, 30) })
+                    {
+                        Send(0x201, point.X, point.Y); Send(0x202, point.X, point.Y);
+                        Send(0x203, point.X, point.Y); Send(0x202, point.X, point.Y);
+                        Check(activations == 0 && !list.Capture);
+                    }
+                    Send(0x201, 30, 30); Send(0x202, 30, 30); Check(activations == 0);
+                    Send(0x203, 30, 30); Send(0x202, 30, 30); Check(activations == 1 && !list.Capture);
+                    list.ReorderEnabled = false;
+                    Send(0x203, 30, row.Bottom + 30); Check(activations == 1);
+                    Send(0x203, 30, 30); Check(activations == 2 && !list.Capture);
+                    hitForm.Close();
+                });
+                hitForm.ShowDialog();
+            }
+            Console.WriteLine("PASS selected shortcut ignores blank space and card gaps; activation only inside card; capture released");
             var settings = new AppSettings();
             using (var dialog = new SettingsDialog(settings))
             {

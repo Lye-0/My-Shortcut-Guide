@@ -197,6 +197,11 @@ internal sealed class SectionList : ReorderListBox
 
 internal sealed class ShortcutList : ReorderListBox
 {
+    protected override Rectangle ItemHitBounds(int index)
+    {
+        var row = GetItemRectangle(index); var scale = DeviceDpi / 96f;
+        return new Rectangle(row.X, row.Y + (int)(4 * scale), row.Width - (int)(2 * scale), row.Height - (int)(8 * scale));
+    }
     protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); ItemHeight = (int)(110 * DeviceDpi / 96f); }
     public ShortcutList()
     {
