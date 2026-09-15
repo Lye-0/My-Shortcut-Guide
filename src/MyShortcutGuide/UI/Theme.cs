@@ -123,32 +123,55 @@ internal sealed class BackgroundSurface : TableLayoutPanel, IScrollContent
     }
 }
 
-internal sealed class InputFrame : Panel
+internal class RoundedPanel : Panel
+{
+    public RoundedPanel() { DoubleBuffered = true; BackColor = Theme.Surface; }
+    internal static GraphicsPath Outline(int width, int height, float radius)
+    {
+        var path = new GraphicsPath(); var d = Math.Min(radius * 2, Math.Min(width - 1, height - 1));
+        if (d <= 0) return path;
+        path.AddArc(0.5f, 0.5f, d, d, 180, 90); path.AddArc(width - d - 1, 0.5f, d, d, 270, 90);
+        path.AddArc(width - d - 1, height - d - 1, d, d, 0, 90); path.AddArc(0.5f, height - d - 1, d, d, 90, 90);
+        path.CloseFigure(); return path;
+    }
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        e.Graphics.Clear(Parent?.BackColor ?? Theme.Canvas);
+        e.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+        using var shape = Outline(Width, Height, 6 * DeviceDpi / 96f);
+        using var fill = new SolidBrush(BackColor); e.Graphics.FillPath(fill, shape);
+    }
+}
+
+internal sealed class InputFrame : RoundedPanel
 {
     private readonly TextBox input;
+    private readonly Control content;
     public InputFrame(TextBox input)
     {
-        this.input = input; BackColor = Theme.Surface; Padding = Padding.Empty;
+        this.input = input;
         input.Dock = DockStyle.None; input.BorderStyle = BorderStyle.None; input.Margin = Padding.Empty;
-        Controls.Add(input); input.GotFocus += (_, _) => Invalidate(); input.LostFocus += (_, _) => Invalidate();
+        content = input.Multiline ? new ScrollFrame(input) : input;
+        Controls.Add(content); input.GotFocus += (_, _) => Invalidate(); input.LostFocus += (_, _) => Invalidate();
         MouseDown += (_, _) => input.Focus();
     }
     protected override void OnLayout(LayoutEventArgs e)
     {
         base.OnLayout(e);
-        if (input is null) return;
-        var inset = (int)(12 * DeviceDpi / 96f);
-        input.SetBounds(inset, Math.Max(0, (ClientSize.Height - input.PreferredHeight) / 2), Math.Max(0, ClientSize.Width - 2 * inset), input.PreferredHeight);
+        if (content is null) return;
+        var inset = (int)(12 * DeviceDpi / 96f); var vertical = (int)(8 * DeviceDpi / 96f);
+        content.SetBounds(inset, input.Multiline ? vertical : Math.Max(0, (ClientSize.Height - input.PreferredHeight) / 2),
+            Math.Max(0, ClientSize.Width - 2 * inset), input.Multiline ? Math.Max(0, ClientSize.Height - vertical * 2) : input.PreferredHeight);
     }
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e);
         using var pen = new Pen(ContainsFocus ? Theme.Accent : Theme.Border);
-        e.Graphics.DrawRectangle(pen, 0, 0, Math.Max(0, Width - 1), Math.Max(0, Height - 1));
+        using var shape = Outline(Width, Height, 6 * DeviceDpi / 96f); e.Graphics.DrawPath(pen, shape);
     }
 }
 
-internal sealed class SectionList : ThemedListBox
+internal sealed class SectionList : ReorderListBox
 {
     protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); ItemHeight = (int)(47 * DeviceDpi / 96f); }
     public SectionList()
@@ -168,11 +191,11 @@ internal sealed class SectionList : ThemedListBox
         var text = new Rectangle(e.Bounds.X + 18, e.Bounds.Y, e.Bounds.Width - 65, e.Bounds.Height);
         TextRenderer.DrawText(e.Graphics, section.Name, Font, text, Theme.Text, TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
         TextRenderer.DrawText(e.Graphics, section.Shortcuts.Count.ToString(), Font, new Rectangle(e.Bounds.Right - 43, e.Bounds.Y, 28, e.Bounds.Height), Theme.Muted, TextFormatFlags.VerticalCenter | TextFormatFlags.Right);
-        e.DrawFocusRectangle();
+        e.DrawFocusRectangle(); DrawInsertion(e);
     }
 }
 
-internal sealed class ShortcutList : ThemedListBox
+internal sealed class ShortcutList : ReorderListBox
 {
     protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); ItemHeight = (int)(110 * DeviceDpi / 96f); }
     public ShortcutList()
@@ -209,6 +232,7 @@ internal sealed class ShortcutList : ThemedListBox
             TextRenderer.DrawText(e.Graphics, key, Font, cap, Theme.Accent, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
             x += width + S(6);
         }
+        DrawInsertion(e);
         if ((e.State & DrawItemState.Focus) != 0) ControlPaint.DrawFocusRectangle(e.Graphics, card, Theme.Text, Theme.Surface);
     }
 }

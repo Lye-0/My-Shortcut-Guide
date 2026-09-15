@@ -23,6 +23,20 @@ try
         var read = store.Load(); Check(read.Sections.Count == 7 && read.Sections[0].Shortcuts[1].Name == "Edited");
         read.Sections[0].Shortcuts.RemoveAt(0); store.Save(read); Check(store.Load().Sections[0].Shortcuts.Count == 1);
     });
+    Test("drag insertion boundaries and persisted ordering", () =>
+    {
+        var list = new List<int> { 1, 2, 3, 4 };
+        Check(ListOrder.Move(list, 0, 4) && list.SequenceEqual(new[] { 2, 3, 4, 1 }));
+        Check(ListOrder.Move(list, 3, 0) && list.SequenceEqual(new[] { 1, 2, 3, 4 }));
+        Check(!ListOrder.Move(list, 1, 1) && !ListOrder.Move(list, 1, 2) && !ListOrder.Move(list, -1, 0));
+        var moved = DocumentStore.Clone(doc); var id = moved.Sections[0].Id;
+        Check(ListOrder.Move(moved.Sections, 0, moved.Sections.Count));
+        moved.Sections[^1].Shortcuts.Add(new ShortcutEntry { Name = "Second", KeyCode = 71 });
+        var shortcutId = moved.Sections[^1].Shortcuts[0].Id;
+        Check(ListOrder.Move(moved.Sections[^1].Shortcuts, 0, 2));
+        store.Save(moved); var restored = store.Load();
+        Check(restored.Sections[^1].Id == id && restored.Sections[^1].Shortcuts[^1].Id == shortcutId);
+    });
     Test("export/import round trip", () => { var path = Path.Combine(root, "export.json"); DocumentStore.Export(doc, path); Check(JsonSerializer.Serialize(DocumentStore.Read(path)) == JsonSerializer.Serialize(doc)); });
     Test("malformed JSON leaves original untouched", () => { var before = File.ReadAllText(store.Path); var bad = Path.Combine(root, "bad.json"); File.WriteAllText(bad, "{broken"); Reject(() => DocumentStore.Read(bad)); Check(File.ReadAllText(store.Path) == before); });
     Test("invalid model never overwrites JSON", () => { var before = File.ReadAllText(store.Path); var bad = DocumentStore.Clone(doc); bad.Sections[0].Shortcuts[0].KeyCode = 17; Reject(() => store.Save(bad)); Check(before == File.ReadAllText(store.Path)); });

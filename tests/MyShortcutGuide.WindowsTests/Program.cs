@@ -34,7 +34,7 @@ internal static class Program
                     controls.OfType<TextBox>().Single(c => c.AccessibleName == "説明").Text = "line1\nline2";
                     controls.OfType<CheckBox>().Single(c => c.Text == "Ctrl").Checked = true;
                     controls.OfType<StyledComboBox>().Single(c => c.AccessibleName == "メインキー").SelectedItem = KeyCatalog.All.Single(k => k.Code == 70);
-                    controls.OfType<StyledComboBox>().Single(c => c.AccessibleName == "セクション").SelectedItem = sections[2];
+                    Check(!controls.OfType<StyledComboBox>().Any(c => c.AccessibleName == "セクション"));
                     Check(controls.OfType<StyledComboBox>().All(c => c.AccessibilityObject.Role == AccessibleRole.ComboBox));
                     controls.OfType<CheckBox>().Single(c => c.Text.Contains("Recommended")).Checked = true;
                     foreach (var label in controls.OfType<Label>().Where(c => c.AutoSize && c.Visible))
@@ -42,7 +42,7 @@ internal static class Program
                     controls.OfType<Button>().Single(c => c.Text == "保存").PerformClick();
                 });
                 var result = dialog.ShowDialog();
-                Check(result == DialogResult.OK && entry.Ctrl && entry.KeyCode == 70 && entry.Name == "検索: 日本語" && entry.Recommended && dialog.SectionId == sections[2].Id);
+                Check(result == DialogResult.OK && entry.Ctrl && entry.KeyCode == 70 && entry.Name == "検索: 日本語" && entry.Recommended && dialog.SectionId == sections[0].Id);
                 Console.WriteLine("PASS real shortcut form save, modifiers, main key, section and labels");
             }
             using (var editor = new EditorForm(new AppController(), () => { }, () => { }))

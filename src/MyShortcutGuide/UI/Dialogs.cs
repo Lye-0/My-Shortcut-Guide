@@ -18,7 +18,7 @@ internal class DialogBase : Form
         var fieldLabel = Theme.Label(label); fieldLabel.Tag = control;
         var row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, 34)); Content.Controls.Add(fieldLabel, 0, row);
         row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
-        Content.Controls.Add(control is ThemedTextBox { Multiline: true } ? new ScrollFrame(control) { Dock = DockStyle.Fill } : control, 0, row);
+        Content.Controls.Add(control is TextBox input ? new InputFrame(input) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 8) } : control, 0, row);
     }
     protected override void OnLoad(EventArgs e)
     {
@@ -77,20 +77,28 @@ internal sealed class SettingsDialog : DialogBase
 internal sealed class ShortcutDialog : DialogBase
 {
     private readonly TextBox name, description;
-    private readonly StyledComboBox section, key;
+    private readonly StyledComboBox? section;
+    private readonly StyledComboBox key;
+    private readonly Guid initialSectionId;
     private readonly CheckBox win, ctrl, shift, alt, recommended;
     private readonly Label preview = Theme.Label("", 18, Theme.Accent);
     public ShortcutEntry Entry { get; }
-    public Guid SectionId => ((Section)section.SelectedItem!).Id;
+    public Guid SectionId => section?.SelectedItem is Section selected ? selected.Id : initialSectionId;
     public ShortcutDialog(List<Section> sections, Guid sectionId, ShortcutEntry entry, bool existing)
-        : base(existing ? "ショートカットを編集" : "ショートカットを追加", new Size(640, 790))
+        : base(existing ? "ショートカットを編集" : "ショートカットを追加", new Size(640, existing ? 890 : 810))
     {
-        Entry = entry;
+        Entry = entry; initialSectionId = sectionId;
         AddContent(Theme.Label(existing ? "ショートカットを編集" : "新しいショートカット", 22), 58);
-        name = Theme.Input("名前", entry.Name); name.MaxLength = 120; AddField("名前（必須）", name, 45);
-        description = Theme.Input("説明", entry.Description, true); description.MaxLength = 2000; description.ScrollBars = ScrollBars.Vertical; AddField("説明（任意）", description, 85);
-        section = Combo("セクション"); section.Items.AddRange(sections.Cast<object>().ToArray()); section.SelectedItem = sections.Single(s => s.Id == sectionId);
-        AddField("セクション", section, 46);
+        name = Theme.Input("名前", entry.Name); name.MaxLength = 120; AddField("名前（必須）", name, 50);
+        description = Theme.Input("説明", entry.Description, true); description.MaxLength = 2000; description.ScrollBars = ScrollBars.Vertical; AddField("説明（任意）", description, 100);
+        if (existing)
+        {
+            section = Combo("セクション"); section.Items.AddRange(sections.Cast<object>().ToArray()); section.SelectedItem = sections.Single(s => s.Id == sectionId);
+            AddField("移動先のセクション", section, 46);
+        }
+        var divider = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Border, Margin = new Padding(0, 12, 0, 11) };
+        AddContent(divider, 24);
+        AddContent(Theme.Label("キーの組み合わせ", 12), 38);
         win = Modifier("Win", entry.Win); ctrl = Modifier("Ctrl", entry.Ctrl); shift = Modifier("Shift", entry.Shift); alt = Modifier("Alt", entry.Alt);
         AddField("修飾キー", Theme.Row(win, ctrl, shift, alt), 42);
         key = Combo("メインキー"); key.Items.AddRange(KeyCatalog.All.Cast<object>().ToArray()); key.SelectedItem = KeyCatalog.All.First(k => k.Code == entry.KeyCode);
@@ -98,7 +106,10 @@ internal sealed class ShortcutDialog : DialogBase
         key.SelectedIndexChanged += (_, _) => UpdatePreview();
         var record = Theme.Button("キーを記録", RecordKeys);
         AddField("メインキー", Theme.Row(key, record), 49);
-        preview.AutoSize = false; preview.Dock = DockStyle.Fill; AddContent(preview, 52);
+        preview.AutoSize = false; preview.Dock = DockStyle.Fill;
+        var result = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Theme.Selected, Padding = new Padding(14, 8, 14, 8), Margin = new Padding(0, 4, 0, 12) };
+        var resultLabel = Theme.Label("組み合わせの結果", 9, Theme.Accent); resultLabel.Dock = DockStyle.Top;
+        result.Controls.Add(preview); result.Controls.Add(resultLabel); AddContent(result, 88);
         recommended = new CheckBox { Text = "おすすめに表示（Recommended）", AutoSize = true, Checked = entry.Recommended }; AddContent(recommended, 40);
         AddButtons(() =>
         {

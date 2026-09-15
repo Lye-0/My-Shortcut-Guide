@@ -24,13 +24,20 @@ internal sealed class StyledComboBox : Control
         SetStyle(ControlStyles.Selectable | ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer, true);
         TabStop = true; Height = 38; Margin = new Padding(0, 0, 0, 8); BackColor = Theme.Surface; ForeColor = Theme.Text;
     }
+    protected override void OnPaintBackground(PaintEventArgs e)
+    {
+        e.Graphics.Clear(Parent?.BackColor ?? Theme.Canvas);
+        e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+        using var shape = RoundedPanel.Outline(Width, Height, 6 * DeviceDpi / 96f);
+        using var fill = new SolidBrush(BackColor); e.Graphics.FillPath(fill, shape);
+    }
     protected override void OnPaint(PaintEventArgs e)
     {
         base.OnPaint(e); var scale = DeviceDpi / 96f; int S(int v) => (int)(v * scale);
         TextRenderer.DrawText(e.Graphics, SelectedItem?.ToString() ?? "", Font, new Rectangle(S(12), 0, Math.Max(0, Width - S(48)), Height), Enabled ? Theme.Text : Theme.Muted,
             TextFormatFlags.VerticalCenter | TextFormatFlags.EndEllipsis | TextFormatFlags.NoPrefix);
         using var line = new Pen(Focused || popup?.Visible == true ? Theme.Accent : Theme.Border);
-        e.Graphics.DrawRectangle(line, 0, 0, Width - 1, Height - 1);
+        using var shape = RoundedPanel.Outline(Width, Height, 6 * scale); e.Graphics.DrawPath(line, shape);
         using var arrow = new Pen(Theme.Muted, Math.Max(1, scale)); var x = Width - S(19); var y = Height / 2;
         e.Graphics.DrawLines(arrow, [new(x - S(4), y - S(2)), new(x, y + S(2)), new(x + S(4), y - S(2))]);
     }

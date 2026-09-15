@@ -15,7 +15,7 @@ internal sealed class EditorForm : Form
     private readonly Label empty = Theme.Label("まだショートカットがありません\n「＋ ショートカット」で、最初のキーを登録しましょう。", 12, Theme.Muted);
     private readonly TextBox search = Theme.Input("選択セクション内を検索");
     private readonly List<Control> mutations = [];
-    private Button edit = null!, remove = null!, up = null!, down = null!, add = null!;
+    private Button edit = null!, remove = null!, add = null!;
     private Button sectionRename = null!, sectionRemove = null!;
     private bool refreshing;
     private Section? SelectedSection => sections.SelectedItem as Section;
@@ -48,7 +48,7 @@ internal sealed class EditorForm : Form
         sectionActions.Controls.Add(sectionRename, 2, 0); sectionActions.Controls.Add(sectionRemove, 3, 0);
         foreach (var button in new[] { sectionAdd, sectionRename, sectionRemove }) tips.SetToolTip(button, button.AccessibleName);
         sidebar.Controls.Add(sectionActions, 0, 1); sidebar.Controls.Add(new ScrollFrame(sections) { Dock = DockStyle.Fill }, 0, 2);
-        tips.SetToolTip(sections, "セクションを選択 · Alt + 上下キーで並べ替え");
+        tips.SetToolTip(sections, "ドラッグで並べ替え · Alt + 上下キーでも移動できます");
         sections.KeyDown += (_, e) =>
         {
             if (e.Alt && e.KeyCode is Keys.Up or Keys.Down)
@@ -97,14 +97,32 @@ internal sealed class EditorForm : Form
         listPanel.Controls.Add(empty); main.Controls.Add(listPanel, 0, 3);
         edit = Theme.Button("編集", () => Run(() => EditShortcutAsync(true)));
         remove = Theme.Button("削除", () => Run(DeleteShortcutAsync));
-        up = Theme.Button("↑ 上へ", () => Run(() => MoveShortcutAsync(-1)));
-        down = Theme.Button("↓ 下へ", () => Run(() => MoveShortcutAsync(1)));
-        var itemActions = Theme.Row(edit, remove, up, down); itemActions.Padding = new Padding(0, 14, 0, 0); main.Controls.Add(itemActions, 0, 4);
+        var itemActions = Theme.Row(edit, remove); itemActions.Padding = new Padding(0, 14, 0, 0); main.Controls.Add(itemActions, 0, 4);
         status.AutoSize = false; status.Dock = DockStyle.Fill; main.Controls.Add(status, 0, 5);
-        mutations.AddRange([sectionAdd, sectionRename, sectionRemove, settings, import, regenerate, add, edit, remove, up, down]);
+        mutations.AddRange([sectionAdd, sectionRename, sectionRemove, settings, import, regenerate, add, edit, remove]);
         sections.SelectedIndexChanged += (_, _) => { if (!refreshing) { search.Clear(); RefreshShortcuts(); } };
         shortcuts.SelectedIndexChanged += (_, _) => UpdateActions();
         shortcuts.DoubleClick += (_, _) => { if (SelectedShortcut is not null) Run(() => EditShortcutAsync(true)); };
+        sections.ReorderRequested += (_, e) => Run(async () =>
+        {
+            var doc = DocumentStore.Clone(controller.Document);
+            if (ListOrder.Move(doc.Sections, e.From, e.Insertion)) await controller.SaveAsync(doc);
+        });
+        shortcuts.ReorderRequested += (_, e) => Run(async () =>
+        {
+            if (SelectedSection is not { } selected || search.Text.Length > 0) return;
+            var doc = DocumentStore.Clone(controller.Document);
+            if (ListOrder.Move(doc.Sections.Single(s => s.Id == selected.Id).Shortcuts, e.From, e.Insertion)) await controller.SaveAsync(doc);
+        });
+        tips.SetToolTip(shortcuts, "ドラッグで並べ替え · 検索中は並べ替えできません · Alt + 上下キーでも移動できます");
+        shortcuts.KeyDown += (_, e) =>
+        {
+            if (e.Alt && e.KeyCode is Keys.Up or Keys.Down)
+            {
+                e.Handled = e.SuppressKeyPress = true;
+                Run(() => MoveShortcutAsync(e.KeyCode == Keys.Up ? -1 : 1));
+            }
+        };
         controller.Changed += OnChanged;
         FormClosed += (_, _) => controller.Changed -= OnChanged;
         FormClosing += (_, e) =>
@@ -149,8 +167,8 @@ internal sealed class EditorForm : Form
         var s = SelectedSection; var i = SelectedShortcut; var ready = !controller.IsBusy;
         add.Enabled = ready && s is not null;
         edit.Enabled = remove.Enabled = ready && i is not null;
-        up.Enabled = ready && i is not null && search.Text.Length == 0 && s!.Shortcuts.IndexOf(i) > 0;
-        down.Enabled = ready && i is not null && search.Text.Length == 0 && s!.Shortcuts.IndexOf(i) < s.Shortcuts.Count - 1;
+        sections.ReorderEnabled = ready;
+        shortcuts.ReorderEnabled = ready && search.Text.Length == 0;
         sectionRename.Enabled = sectionRemove.Enabled = ready && s is not null;
     }
     private async void Run(Func<Task> action)
