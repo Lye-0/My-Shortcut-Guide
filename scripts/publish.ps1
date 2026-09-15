@@ -6,6 +6,7 @@ $destination = Join-Path $repoRoot "artifacts/MyShortcutGuide-$Version-win-x64"
 dotnet publish (Join-Path $repoRoot 'src/MyShortcutGuide/MyShortcutGuide.csproj') -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:EnableCompressionInSingleFile=true -p:DebugType=None -p:DebugSymbols=false -p:Version=$Version -o $destination
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 Copy-Item -LiteralPath (Join-Path $repoRoot 'README.md'), (Join-Path $repoRoot 'LICENSE') -Destination $destination
+Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/verification.md') -Destination $destination
 $zip = "$destination.zip"
 Compress-Archive -Path "$destination/*" -DestinationPath $zip -Force
 $hash = Get-FileHash -LiteralPath $zip -Algorithm SHA256

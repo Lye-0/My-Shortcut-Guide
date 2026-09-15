@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MyShortcutGuide.Core/MyShortcutGuide.Core.csproj" />
+    <Project Path="src/MyShortcutGuide/MyShortcutGuide.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MyShortcutGuide.CaptureTest/MyShortcutGuide.CaptureTest.csproj" />
+    <Project Path="tests/MyShortcutGuide.Tests/MyShortcutGuide.Tests.csproj" />
+    <Project Path="tests/MyShortcutGuide.WindowsTests/MyShortcutGuide.WindowsTests.csproj" />
+  </Folder>
+</Solution>
