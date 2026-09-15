@@ -33,8 +33,9 @@ internal static class Program
                     name.Text = "検索: 日本語";
                     controls.OfType<TextBox>().Single(c => c.AccessibleName == "説明").Text = "line1\nline2";
                     controls.OfType<CheckBox>().Single(c => c.Text == "Ctrl").Checked = true;
-                    controls.OfType<ComboBox>().Single(c => c.AccessibleName == "メインキー").SelectedItem = KeyCatalog.All.Single(k => k.Code == 70);
-                    controls.OfType<ComboBox>().Single(c => c.AccessibleName == "セクション").SelectedItem = sections[2];
+                    controls.OfType<StyledComboBox>().Single(c => c.AccessibleName == "メインキー").SelectedItem = KeyCatalog.All.Single(k => k.Code == 70);
+                    controls.OfType<StyledComboBox>().Single(c => c.AccessibleName == "セクション").SelectedItem = sections[2];
+                    Check(controls.OfType<StyledComboBox>().All(c => c.AccessibilityObject.Role == AccessibleRole.ComboBox));
                     controls.OfType<CheckBox>().Single(c => c.Text.Contains("Recommended")).Checked = true;
                     foreach (var label in controls.OfType<Label>().Where(c => c.AutoSize && c.Visible))
                         if (label.Height < label.PreferredHeight) throw new Exception($"Clipped label: {label.Text}: {label.Height}/{label.PreferredHeight}");
@@ -72,6 +73,61 @@ internal static class Program
                 editor.ShowDialog();
                 Console.WriteLine("PASS sidebar action scope, padded search, narrow layout and background focus release");
             }
+            foreach (var accept in new[] { false, true })
+            {
+                using var notice = new NoticeDialog("セクションを削除しますか？", "「テスト用」\n登録済みのショートカット：0 件", "削除する", true, true);
+                notice.Shown += (_, _) => notice.BeginInvoke(() =>
+                {
+                    Check(notice.AcceptButton is Button { Text: "キャンセル" });
+                    Check(notice.CancelButton is Button { Text: "キャンセル" });
+                    All(notice).OfType<Button>().Single(b => b.Text == (accept ? "削除する" : "キャンセル")).PerformClick();
+                });
+                Check(notice.ShowDialog() == (accept ? DialogResult.OK : DialogResult.Cancel));
+            }
+            Console.WriteLine("PASS themed confirmation results and safe default action");
+            using (var scrollTest = new Form { ClientSize = new Size(480, 260) })
+            {
+                var list = new SectionList(); list.Items.AddRange(Enumerable.Range(1, 80).Select(i => new Section { Name = "Section " + i }).Cast<object>().ToArray());
+                var text = new ThemedTextBox { Multiline = true, Text = string.Join("\r\n", Enumerable.Range(1, 80)), Height = 100 };
+                scrollTest.Controls.Add(new ScrollFrame(list) { Dock = DockStyle.Fill });
+                scrollTest.Controls.Add(new ScrollFrame(text) { Dock = DockStyle.Bottom, Height = 100 });
+                scrollTest.Shown += (_, _) => scrollTest.BeginInvoke(() =>
+                {
+                    Check(list.Total > list.Page && text.Total > text.Page);
+                    list.Offset = 35; Check(list.Offset == 35);
+                    text.Offset = 20; Check(text.Offset == 20);
+                    list.Offset = 10000; Check(list.Offset == list.Total - list.Page);
+                    list.Offset = 0; text.Offset = 0; Check(list.Offset == 0 && text.Offset == 0);
+                    scrollTest.Close();
+                });
+                scrollTest.ShowDialog();
+            }
+            Console.WriteLine("PASS themed list/text scroll range and end positions");
+            using (var selectorTest = new Form { ClientSize = new Size(480, 400) })
+            {
+                var selector = new StyledComboBox { Size = new Size(320, 42), Location = new Point(20, 20) };
+                selector.Items.AddRange(Enumerable.Range(1, 40).Select(i => (object)("Choice " + i))); selector.SelectedIndex = 0;
+                selectorTest.Controls.Add(selector);
+                selectorTest.Shown += (_, _) => selectorTest.BeginInvoke(() =>
+                {
+                    var popupField = typeof(StyledComboBox).GetField("popup", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                    var keyMethod = typeof(Control).GetMethod("OnKeyDown", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!;
+                    selector.OpenPopup();
+                    var popup = (ToolStripDropDown)popupField.GetValue(selector)!;
+                    var list = All(((ToolStripControlHost)popup.Items[0]).Control).OfType<ThemedListBox>().Single();
+                    Check(popup.Visible && list.Total > list.Page);
+                    list.SelectedIndex = 5; keyMethod.Invoke(list, [new KeyEventArgs(Keys.Enter)]);
+                    Check(selector.SelectedIndex == 5 && !popup.Visible);
+                    selector.OpenPopup(); popup = (ToolStripDropDown)popupField.GetValue(selector)!;
+                    list = All(((ToolStripControlHost)popup.Items[0]).Control).OfType<ThemedListBox>().Single();
+                    list.Offset = 25; Check(list.Offset == 25); list.SelectedIndex = 30;
+                    keyMethod.Invoke(list, [new KeyEventArgs(Keys.Escape)]);
+                    Check(selector.SelectedIndex == 5 && !popup.Visible);
+                    selectorTest.Close();
+                });
+                selectorTest.ShowDialog();
+            }
+            Console.WriteLine("PASS popup commit/cancel and candidate list scrolling");
             var settings = new AppSettings();
             using (var dialog = new SettingsDialog(settings))
             {

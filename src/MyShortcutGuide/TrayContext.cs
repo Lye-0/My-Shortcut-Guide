@@ -62,7 +62,7 @@ internal sealed class TrayContext : ApplicationContext
     {
         if (controller.IsBusy)
         {
-            MessageBox.Show(editor, "保存処理が完了してから終了してください。", "My Shortcut Guide");
+            NoticeDialog.ShowMessage(editor, "保存処理を実行中です", "保存処理が完了してから終了してください。");
             return;
         }
         ExitThread();

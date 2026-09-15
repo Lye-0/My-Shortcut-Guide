@@ -47,7 +47,7 @@ internal sealed class EditorForm : Form
         sectionActions.Controls.Add(sectionLabel, 0, 0); sectionActions.Controls.Add(sectionAdd, 1, 0);
         sectionActions.Controls.Add(sectionRename, 2, 0); sectionActions.Controls.Add(sectionRemove, 3, 0);
         foreach (var button in new[] { sectionAdd, sectionRename, sectionRemove }) tips.SetToolTip(button, button.AccessibleName);
-        sidebar.Controls.Add(sectionActions, 0, 1); sidebar.Controls.Add(sections, 0, 2);
+        sidebar.Controls.Add(sectionActions, 0, 1); sidebar.Controls.Add(new ScrollFrame(sections) { Dock = DockStyle.Fill }, 0, 2);
         tips.SetToolTip(sections, "セクションを選択 · Alt + 上下キーで並べ替え");
         sections.KeyDown += (_, e) =>
         {
@@ -93,7 +93,7 @@ internal sealed class EditorForm : Form
         search.TextChanged += (_, _) => RefreshShortcuts();
         main.Controls.Add(new InputFrame(search) { Dock = DockStyle.Fill, Margin = new Padding(0, 0, 0, 12) }, 0, 2);
         var listPanel = new Panel { Dock = DockStyle.Fill, Margin = Padding.Empty };
-        listPanel.Controls.Add(shortcuts); empty.Dock = DockStyle.Fill; empty.TextAlign = ContentAlignment.MiddleCenter; empty.AutoSize = false;
+        listPanel.Controls.Add(new ScrollFrame(shortcuts) { Dock = DockStyle.Fill }); empty.Dock = DockStyle.Fill; empty.TextAlign = ContentAlignment.MiddleCenter; empty.AutoSize = false;
         listPanel.Controls.Add(empty); main.Controls.Add(listPanel, 0, 3);
         edit = Theme.Button("編集", () => Run(() => EditShortcutAsync(true)));
         remove = Theme.Button("削除", () => Run(DeleteShortcutAsync));
@@ -173,7 +173,7 @@ internal sealed class EditorForm : Form
     }
     private async Task DeleteSectionAsync()
     {
-        if (SelectedSection is not { } s || MessageBox.Show(this, $"「{s.Name}」と、その中の{s.Shortcuts.Count}件を削除しますか？", "セクションの削除", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.OK) return;
+        if (SelectedSection is not { } s || !NoticeDialog.Confirm(this, "セクションを削除しますか？", $"「{s.Name}」\n登録済みのショートカット：{s.Shortcuts.Count} 件", "削除する", true)) return;
         var doc = DocumentStore.Clone(controller.Document); doc.Sections.RemoveAll(x => x.Id == s.Id); await controller.SaveAsync(doc);
     }
     private async Task MoveSectionAsync(int delta)
@@ -197,7 +197,7 @@ internal sealed class EditorForm : Form
     }
     private async Task DeleteShortcutAsync()
     {
-        if (SelectedShortcut is not { } item || MessageBox.Show(this, $"「{item.Name}」を削除しますか？", "ショートカットの削除", MessageBoxButtons.OKCancel, MessageBoxIcon.Warning, MessageBoxDefaultButton.Button2) != DialogResult.OK) return;
+        if (SelectedShortcut is not { } item || !NoticeDialog.Confirm(this, "ショートカットを削除しますか？", $"「{item.Name}」", "削除する", true)) return;
         var doc = DocumentStore.Clone(controller.Document); foreach (var s in doc.Sections) s.Shortcuts.RemoveAll(x => x.Id == item.Id); await controller.SaveAsync(doc);
     }
     private async Task MoveShortcutAsync(int delta)
@@ -217,7 +217,7 @@ internal sealed class EditorForm : Form
         using var picker = new OpenFileDialog { Filter = "My Shortcut Guide JSON|*.json", Title = "JSONをインポート" };
         if (picker.ShowDialog(this) != DialogResult.OK) return;
         var doc = DocumentStore.Read(picker.FileName);
-        if (MessageBox.Show(this, $"{doc.Sections.Count} セクション / {doc.Sections.Sum(s => s.Shortcuts.Count)} 件で現在のライブラリを置き換えます。\n直前のデータはバックアップされます。アプリ設定は現在の設定を引き継ぎます。", "インポートの確認", MessageBoxButtons.OKCancel, MessageBoxIcon.Question, MessageBoxDefaultButton.Button2) != DialogResult.OK) return;
+        if (!NoticeDialog.Confirm(this, "ライブラリを読み込みますか？", $"{doc.Sections.Count} セクション / {doc.Sections.Sum(s => s.Shortcuts.Count)} 件で現在のライブラリを置き換えます。\n直前のデータはバックアップされます。アプリ設定は現在の設定を引き継ぎます。", "読み込む")) return;
         doc.Settings = DocumentStore.Clone(controller.Document).Settings; await controller.SaveAsync(doc);
     }
     private void Export()

@@ -72,25 +72,55 @@ internal static class Theme
             control.MouseDown += (_, _) =>
             {
                 if (control.Tag is Control associatedInput) { associatedInput.Select(); return; }
-                var background = form.Controls.OfType<BackgroundSurface>().FirstOrDefault();
+                var background = FindBackground(form);
                 if (background is not null) background.Focus();
                 else { form.ActiveControl = null; form.Focus(); }
             };
         foreach (Control child in control.Controls) WireBackgroundFocus(form, child);
     }
-    public static TextBox Input(string label, string value = "", bool multiline = false) => new()
+    private static BackgroundSurface? FindBackground(Control parent)
+    {
+        if (parent is BackgroundSurface surface) return surface;
+        foreach (Control child in parent.Controls) if (FindBackground(child) is { } found) return found;
+        return null;
+    }
+    public static TextBox Input(string label, string value = "", bool multiline = false) => new ThemedTextBox
     {
         Text = multiline ? value.ReplaceLineEndings(Environment.NewLine) : value, AccessibleName = label, Dock = DockStyle.Fill, BackColor = Surface, ForeColor = Text,
         BorderStyle = BorderStyle.FixedSingle, Multiline = multiline,
         Height = multiline ? 84 : 32, Margin = new Padding(0, 0, 0, 16)
     };
     public static void Error(IWin32Window? owner, Exception ex) =>
-        MessageBox.Show(owner, ex.Message, "操作を完了できませんでした", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        NoticeDialog.ShowMessage(owner, "操作を完了できませんでした", ex.Message);
 }
 
-internal sealed class BackgroundSurface : TableLayoutPanel
+internal sealed class BackgroundSurface : TableLayoutPanel, IScrollContent
 {
+    private int wheelRemainder;
+    private bool updating;
+    public event Action? ViewChanged;
+    public int Total => DisplayRectangle.Height;
+    public int Page => ClientSize.Height;
+    public int Step => Font.Height;
+    [System.ComponentModel.DesignerSerializationVisibility(System.ComponentModel.DesignerSerializationVisibility.Hidden)]
+    public int Offset { get => -AutoScrollPosition.Y; set { AutoScrollPosition = new Point(0, Math.Clamp(value, 0, Math.Max(0, Total - Page))); ViewChanged?.Invoke(); } }
     public BackgroundSurface() { SetStyle(ControlStyles.Selectable, true); TabStop = false; AccessibleName = "画面の背景"; }
+    protected override void OnLayout(LayoutEventArgs e)
+    {
+        base.OnLayout(e);
+        if (!updating && AutoScroll && IsHandleCreated)
+        {
+            updating = true;
+            try { ScrollNative.HideNative(Handle); ViewChanged?.Invoke(); }
+            finally { updating = false; }
+        }
+    }
+    protected override void OnScroll(ScrollEventArgs se) { base.OnScroll(se); ViewChanged?.Invoke(); }
+    protected override void WndProc(ref Message m)
+    {
+        if (AutoScroll && m.Msg == 0x20A) { Offset -= ScrollNative.Units(ref wheelRemainder, ScrollNative.Wheel(m.WParam), Page, Step); return; }
+        base.WndProc(ref m);
+    }
 }
 
 internal sealed class InputFrame : Panel
@@ -118,7 +148,7 @@ internal sealed class InputFrame : Panel
     }
 }
 
-internal sealed class SectionList : ListBox
+internal sealed class SectionList : ThemedListBox
 {
     protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); ItemHeight = (int)(47 * DeviceDpi / 96f); }
     public SectionList()
@@ -142,7 +172,7 @@ internal sealed class SectionList : ListBox
     }
 }
 
-internal sealed class ShortcutList : ListBox
+internal sealed class ShortcutList : ThemedListBox
 {
     protected override void OnHandleCreated(EventArgs e) { base.OnHandleCreated(e); ItemHeight = (int)(110 * DeviceDpi / 96f); }
     public ShortcutList()

@@ -65,7 +65,7 @@ dotnet run --project tests/MyShortcutGuide.Tests -c Release
 pwsh -File scripts/publish.ps1
 ```
 
-`artifacts/MyShortcutGuide-0.1.1-win-x64/` にself-contained single-file EXE、README、LICENSEを生成し、同名ZIPとSHA-256チェックサムも作ります。単一EXEにネイティブライブラリを同梱するため、実行時に.NETの一時展開が発生します。トリミングはWinFormsの互換性維持のため無効です。
+`artifacts/MyShortcutGuide-0.1.2-win-x64/` にself-contained single-file EXE、README、LICENSEを生成し、同名ZIPとSHA-256チェックサムも作ります。単一EXEにネイティブライブラリを同梱するため、実行時に.NETの一時展開が発生します。トリミングはWinFormsの互換性維持のため無効です。
 
 GitHub Actionsはビルド・テスト・配布ZIPの生成に対応。`v*` タグでGitHub Releaseのドラフトと添付ファイルを作成します。署名証明書や発行先の認証情報は含めません。v1はポータブル配布で、ユーザーデータは配布フォルダーから分離しているため、後からinstaller/MSIXのライフサイクルへ移行できます。MSIXでは自動起動アダプターの差し替えが必要です。
 
@@ -74,3 +74,7 @@ GitHub Actionsはビルド・テスト・配布ZIPの生成に対応。`v*` タ�
 ## License
 
 MIT。PowerToysとは独立したコミュニティアプリです。
+
+### UI部品の方針
+
+アプリ内の確認・エラー表示、選択欄の展開状態、スクロールバーも共通の色・余白・操作状態で描画します。既定の外観を完成形として採用せず、各状態を確認します。選択欄は上下/Home/End、Enter/Space/F4で展開、候補ではEnterで確定・Escで取消ができます。ファイルのImport/Export先を選ぶ画面はWindowsのファイル選択ダイアログを使用します。

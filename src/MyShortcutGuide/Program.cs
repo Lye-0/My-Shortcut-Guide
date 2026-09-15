@@ -29,7 +29,7 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            MessageBox.Show($"起動できませんでした。既存のデータは保持されています。\n\n{ex.Message}", "My Shortcut Guide", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            UI.NoticeDialog.ShowMessage(null, "起動できませんでした", $"既存のデータは保持されています。\n\n{ex.Message}");
         }
         finally { mutex.ReleaseMutex(); }
     }

@@ -4,20 +4,21 @@ namespace MyShortcutGuide.UI;
 
 internal class DialogBase : Form
 {
-    protected readonly BackgroundSurface Content = new() { Dock = DockStyle.Fill, ColumnCount = 1, AutoScroll = true, Padding = new Padding(28, 22, 28, 16) };
+    protected readonly BackgroundSurface Content = new() { Dock = DockStyle.Fill, BackColor = Theme.Canvas, ColumnCount = 1, AutoScroll = true, Padding = new Padding(28, 22, 28, 16) };
     protected readonly FlowLayoutPanel Footer = new() { Dock = DockStyle.Bottom, Height = 70, FlowDirection = FlowDirection.RightToLeft, Padding = new Padding(20, 12, 20, 16) };
     protected readonly Label ErrorLabel = Theme.Label("", 10, Color.FromArgb(255, 180, 160));
     protected DialogBase(string title, Size size)
     {
         Theme.StyleForm(this); Text = title; ClientSize = size; MinimumSize = new Size(size.Width, size.Height);
         StartPosition = FormStartPosition.CenterParent; ShowInTaskbar = false; MaximizeBox = false; MinimizeBox = false;
-        Controls.Add(Content); Controls.Add(Footer);
+        Controls.Add(new ScrollFrame(Content) { Dock = DockStyle.Fill }); Controls.Add(Footer);
     }
     protected void AddField(string label, Control control, int height)
     {
         var fieldLabel = Theme.Label(label); fieldLabel.Tag = control;
         var row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, 34)); Content.Controls.Add(fieldLabel, 0, row);
-        row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, height)); Content.Controls.Add(control, 0, row);
+        row = Content.RowCount++; Content.RowStyles.Add(new RowStyle(SizeType.Absolute, height));
+        Content.Controls.Add(control is ThemedTextBox { Multiline: true } ? new ScrollFrame(control) { Dock = DockStyle.Fill } : control, 0, row);
     }
     protected override void OnLoad(EventArgs e)
     {
@@ -76,7 +77,7 @@ internal sealed class SettingsDialog : DialogBase
 internal sealed class ShortcutDialog : DialogBase
 {
     private readonly TextBox name, description;
-    private readonly ComboBox section, key;
+    private readonly StyledComboBox section, key;
     private readonly CheckBox win, ctrl, shift, alt, recommended;
     private readonly Label preview = Theme.Label("", 18, Theme.Accent);
     public ShortcutEntry Entry { get; }
@@ -93,7 +94,7 @@ internal sealed class ShortcutDialog : DialogBase
         win = Modifier("Win", entry.Win); ctrl = Modifier("Ctrl", entry.Ctrl); shift = Modifier("Shift", entry.Shift); alt = Modifier("Alt", entry.Alt);
         AddField("修飾キー", Theme.Row(win, ctrl, shift, alt), 42);
         key = Combo("メインキー"); key.Items.AddRange(KeyCatalog.All.Cast<object>().ToArray()); key.SelectedItem = KeyCatalog.All.First(k => k.Code == entry.KeyCode);
-        key.Width = 260; key.Dock = DockStyle.None;
+        key.Width = 260; key.Dock = DockStyle.None; key.Margin = new Padding(0, 0, 12, 8);
         key.SelectedIndexChanged += (_, _) => UpdatePreview();
         var record = Theme.Button("キーを記録", RecordKeys);
         AddField("メインキー", Theme.Row(key, record), 49);
@@ -113,11 +114,9 @@ internal sealed class ShortcutDialog : DialogBase
         });
         UpdatePreview(); Shown += (_, _) => name.Focus();
     }
-    private static ComboBox Combo(string name) => new()
+    private static StyledComboBox Combo(string name) => new()
     {
-        AccessibleName = name, DropDownStyle = ComboBoxStyle.DropDownList, Dock = DockStyle.Fill,
-        BackColor = Theme.Surface, ForeColor = Theme.Text, FlatStyle = FlatStyle.Flat, IntegralHeight = false, DropDownHeight = 260,
-        Margin = new Padding(0, 0, 0, 12)
+        AccessibleName = name, Dock = DockStyle.Fill
     };
     private CheckBox Modifier(string text, bool value)
     {
