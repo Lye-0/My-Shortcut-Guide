@@ -80,7 +80,7 @@ internal sealed class EditorForm : Form
         tips.SetToolTip(about, "アプリ情報・保存場所・自動起動の情報");
         var footerActions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
         footerActions.ColumnStyles.Add(new(SizeType.Absolute, 38)); footerActions.ColumnStyles.Add(new(SizeType.Percent, 50)); footerActions.ColumnStyles.Add(new(SizeType.Percent, 50));
-        about.Dock = DockStyle.Fill; about.Margin = new Padding(0, 0, 0, 5);
+        about.Dock = DockStyle.Fill; about.Margin = new Padding(0, 0, 4, 5);
         footerActions.Controls.Add(about, 0, 0); footerActions.Controls.Add(settings, 1, 0); footerActions.Controls.Add(quit, 2, 0);
         globalActions.Controls.Add(footerActions, 0, 3); globalActions.SetColumnSpan(footerActions, 2);
         var resident = Theme.Label("●  バックグラウンドで待機", 9, Theme.Muted); resident.Margin = Padding.Empty; resident.AutoSize = false; resident.Dock = DockStyle.Fill; resident.TextAlign = ContentAlignment.MiddleLeft;
