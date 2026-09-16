@@ -15,13 +15,9 @@ internal sealed class TrayContext : ApplicationContext
     {
         controller = new AppController();
         _ = dispatcher.Handle;
-        var menu = new ContextMenuStrip();
-        menu.Items.Add("Open Editor", null, (_, _) => ShowEditor());
-        menu.Items.Add("Open Shortcut Guide", null, (_, _) => OpenGuide());
-        menu.Items.Add(new ToolStripSeparator());
-        menu.Items.Add("Exit", null, (_, _) => Exit());
+        var menu = new TrayMenu(ShowEditor, OpenGuide, Exit);
         tray = new NotifyIcon { Text = "My Shortcut Guide", Icon = Theme.AppIcon, Visible = true, ContextMenuStrip = menu };
-        tray.DoubleClick += (_, _) => ShowEditor();
+        tray.MouseClick += (_, e) => { if (e.Button == MouseButtons.Left) OpenGuide(); };
         activation = ThreadPool.RegisterWaitForSingleObject(signal, (_, _) =>
         {
             try { if (!disposed) dispatcher.BeginInvoke(ShowEditor); }

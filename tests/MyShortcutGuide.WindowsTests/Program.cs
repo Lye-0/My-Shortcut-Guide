@@ -189,6 +189,23 @@ internal static class Program
                 about.ShowDialog();
             }
             Console.WriteLine("PASS About displays runtime locations without editable inputs and wraps labels");
+            var trayActions = new int[3];
+            using (var menuHost = new Form { ClientSize = new Size(500, 400) })
+            using (var menu = new TrayMenu(() => trayActions[0]++, () => trayActions[1]++, () => trayActions[2]++))
+            {
+                menuHost.Shown += (_, _) => menuHost.BeginInvoke(() =>
+                {
+                    menu.Show(menuHost, new Point(20, 20));
+                    Check(menu.Visible && menu.Region is not null);
+                    var actions = menu.Items.OfType<ToolStripMenuItem>().ToArray();
+                    Check(actions.Length == 3 && actions.All(i => i.Width > 200 && i.Height >= 40));
+                    foreach (var action in actions) action.PerformClick();
+                    Check(trayActions.SequenceEqual(new[] { 1, 1, 1 }));
+                    menu.Close(); Check(!menu.Visible); menuHost.Close();
+                });
+                menuHost.ShowDialog();
+            }
+            Console.WriteLine("PASS themed tray menu layout and all three actions");
             var settings = new AppSettings();
             using (var dialog = new SettingsDialog(settings))
             {

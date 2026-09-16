@@ -1,4 +1,4 @@
-param([string]$Version = '0.1.6')
+param([string]$Version = '0.1.7')
 $ErrorActionPreference = 'Stop'
 if ($Version -notmatch '^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$') { throw 'Version must be a semantic version.' }
 $repoRoot = Split-Path -Parent $PSScriptRoot

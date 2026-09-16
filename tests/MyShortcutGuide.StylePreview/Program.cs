@@ -38,8 +38,10 @@ internal static class Program
             dragForm.Controls.Add(new ScrollFrame(sections) { Dock = DockStyle.Left, Width = 270 });
             Theme.CompleteLayout(dragForm); dragForm.ShowDialog(form);
         }));
+        var trayMenu = new TrayMenu(() => form.Text = "Open Editor", () => form.Text = "Open Shortcut Guide", () => form.Close());
+        form.Disposed += (_, _) => trayMenu.Dispose();
         form.Controls.Add(panel); Theme.CompleteLayout(form);
-        form.Shown += (_, _) => form.BeginInvoke(() => (!args.Contains("--form") ? panel.Controls.OfType<Button>().Last() : panel.Controls.OfType<Button>().First()).PerformClick());
+        form.Shown += (_, _) => form.BeginInvoke(() => trayMenu.Show(form, new Point(260, 220)));
         Application.Run(form);
     }
     private static IEnumerable<Control> All(Control parent)
