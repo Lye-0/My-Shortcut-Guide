@@ -119,10 +119,10 @@ public static class KeyCatalog
             new KeyOption(8,"Backspace"), new(9,"Tab"), new(13,"Enter"), new(19,"Pause"), new(20,"Caps Lock"),
             new(27,"Esc"), new(32,"Space"), new(33,"Page Up"), new(34,"Page Down"), new(35,"End"), new(36,"Home"),
             new(37,"←"), new(38,"↑"), new(39,"→"), new(40,"↓"), new(44,"Print Screen"), new(45,"Insert"), new(46,"Delete"),
-            new(93,"Menu"), new(144,"Num Lock"), new(145,"Scroll Lock"), new(186,"; / : (OEM 1)"), new(187,"+ / = (OEM Plus)"),
-            new(188,", (OEM Comma)"), new(189,"- (OEM Minus)"), new(190,". (OEM Period)"), new(191,"/ / ? (OEM 2)"),
-            new(192,"` / @ (OEM 3)"), new(219,"[ (OEM 4)"), new(220,"\\ (OEM 5)"), new(221,"] (OEM 6)"),
-            new(222,"' / ^ (OEM 7)"), new(226,"OEM 102"), new(28,"変換"), new(29,"無変換"), new(21,"かな"),
+            new(93,"Menu"), new(144,"Num Lock"), new(145,"Scroll Lock"), new(186,";"), new(187,"="),
+            new(188,","), new(189,"-"), new(190,"."), new(191,"/"),
+            new(192,"`"), new(219,"["), new(220,"\\"), new(221,"]"),
+            new(222,"'"), new(226,"\\"), new(28,"変換"), new(29,"無変換"), new(21,"かな"),
             new(173,"Mute"), new(174,"Volume −"), new(175,"Volume +"), new(176,"Next track"), new(177,"Previous track"),
             new(178,"Stop media"), new(179,"Play / Pause") });
         for (var c = 96; c <= 105; c++) result.Add(new(c, $"Num {c - 96}"));
