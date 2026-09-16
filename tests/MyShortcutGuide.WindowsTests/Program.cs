@@ -174,16 +174,31 @@ internal static class Program
                 hitForm.ShowDialog();
             }
             Console.WriteLine("PASS selected shortcut ignores blank space and card gaps; activation only inside card; capture released");
-            using (var about = new AboutDialog(new StartupService()))
+            string? copied = null;
+            using (var about = new AboutDialog(new StartupService(), value => copied = value))
             {
                 about.Shown += (_, _) => about.BeginInvoke(() =>
                 {
                     Check(!All(about).OfType<TextBox>().Any());
-                    Check(about.Details.Contains(AppPaths.Json) && about.Details.Contains(Environment.ProcessPath!));
-                    Check(about.Details.Contains(StartupService.RegistryLocation));
+                    var copyButtons = All(about).OfType<Button>().Where(b => b.Tag is string).ToArray();
+                    Check(copyButtons.Length >= 5);
+                    Check(copyButtons.Any(b => (string)b.Tag! == AppPaths.Json));
+                    Check(copyButtons.Any(b => (string)b.Tag! == Environment.ProcessPath));
+                    Check(copyButtons.Any(b => (string)b.Tag! == StartupService.RegistryLocation));
+                    foreach (var button in copyButtons)
+                    {
+                        button.PerformClick(); Check(copied == (string)button.Tag!);
+                        Check(button.Right <= button.Parent!.ClientSize.Width);
+                    }
+                    copyButtons.Single(b => b.AccessibleName == "直前のデータのバックアップをコピー").PerformClick();
+                    Check(copied == AppPaths.Json + ".bak");
                     foreach (var label in All(about).OfType<Label>().Where(c => c.AutoSize && c.Visible))
                         if(label.Height < label.PreferredHeight) throw new Exception($"Clipped: {label.Text}: {label.Height}/{label.PreferredHeight}");
-                    Check(All(about).OfType<Button>().Any(c => c.Text == "情報をまとめてコピー"));
+                    Check(!All(about).OfType<Button>().Any(c => c.Text == "情報をまとめてコピー"));
+                    var toggle = All(about).OfType<Button>().Single(b => b.AccessibleName == "本体の移動方法");
+                    toggle.PerformClick(); Check(toggle.AccessibleDescription == "展開済み");
+                    Check(All(about).OfType<Label>().Any(l => l.Visible && l.Text.Contains("移動先へ移します")));
+                    toggle.PerformClick(); Check(toggle.AccessibleDescription == "折りたたみ");
                     about.Close();
                 });
                 about.ShowDialog();

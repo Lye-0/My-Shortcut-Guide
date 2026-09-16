@@ -31,7 +31,7 @@ internal sealed class EditorForm : Form
         var sidebar = new TableLayoutPanel { Name = "Sidebar", Dock = DockStyle.Fill, BackColor = Theme.Sidebar, Padding = new Padding(18, 24, 18, 18), ColumnCount = 1, RowCount = 5 };
         sidebar.RowStyles.Add(new(SizeType.Absolute, 94)); sidebar.RowStyles.Add(new(SizeType.Absolute, 50));
         sidebar.RowStyles.Add(new(SizeType.Percent, 100)); sidebar.RowStyles.Add(new(SizeType.Absolute, 1));
-        sidebar.RowStyles.Add(new(SizeType.Absolute, 212));
+        sidebar.RowStyles.Add(new(SizeType.Absolute, 244));
         shell.Controls.Add(sidebar, 0, 0);
         var brand = new FlowLayoutPanel { Dock = DockStyle.Fill, FlowDirection = FlowDirection.TopDown, WrapContents = false };
         brand.Controls.Add(Theme.Label("MY SHORTCUT GUIDE", 10, Theme.Accent));
@@ -79,11 +79,11 @@ internal sealed class EditorForm : Form
         });
         tips.SetToolTip(about, "アプリ情報・保存場所・自動起動の情報");
         var footerActions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
-        footerActions.ColumnStyles.Add(new(SizeType.Percent, 50)); footerActions.ColumnStyles.Add(new(SizeType.Percent, 50)); footerActions.ColumnStyles.Add(new(SizeType.Absolute, 38));
+        footerActions.ColumnStyles.Add(new(SizeType.Absolute, 38)); footerActions.ColumnStyles.Add(new(SizeType.Percent, 50)); footerActions.ColumnStyles.Add(new(SizeType.Percent, 50));
         about.Dock = DockStyle.Fill; about.Margin = new Padding(0, 0, 0, 5);
-        footerActions.Controls.Add(settings, 0, 0); footerActions.Controls.Add(quit, 1, 0); footerActions.Controls.Add(about, 2, 0);
+        footerActions.Controls.Add(about, 0, 0); footerActions.Controls.Add(settings, 1, 0); footerActions.Controls.Add(quit, 2, 0);
         globalActions.Controls.Add(footerActions, 0, 3); globalActions.SetColumnSpan(footerActions, 2);
-        var resident = Theme.Label("●  バックグラウンドで待機", 9, Theme.Muted); resident.Margin = Padding.Empty;
+        var resident = Theme.Label("●  バックグラウンドで待機", 9, Theme.Muted); resident.Margin = Padding.Empty; resident.AutoSize = false; resident.Dock = DockStyle.Fill; resident.TextAlign = ContentAlignment.MiddleLeft;
         globalActions.Controls.Add(resident, 0, 4); globalActions.SetColumnSpan(resident, 2); sidebar.Controls.Add(globalActions, 0, 4);
         tips.SetToolTip(guide, "PowerToys Shortcut Guide を開く");
         tips.SetToolTip(import, "JSONからライブラリ全体を読み込む"); tips.SetToolTip(export, "ライブラリ全体をJSONへ書き出す");
