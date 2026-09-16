@@ -5,6 +5,7 @@ namespace MyShortcutGuide.UI;
 
 internal static class Theme
 {
+    static Theme() => KeyCatalog.LabelResolver = MyShortcutGuide.Services.KeyboardLabels.Resolve;
     public static readonly Color Canvas = Color.FromArgb(24, 26, 30);
     public static readonly Color Sidebar = Color.FromArgb(30, 32, 37);
     public static readonly Color Surface = Color.FromArgb(37, 40, 46);

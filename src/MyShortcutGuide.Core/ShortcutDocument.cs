@@ -99,13 +99,15 @@ public sealed class ShortcutEntry
     public override string ToString() => $"{Name}   {Gesture}{(Recommended ? "   おすすめ" : "")}";
 }
 
-public sealed record KeyOption(int Code, string Label)
+public sealed record KeyOption(int Code, string DefaultLabel)
 {
+    public string Label => KeyCatalog.LabelResolver?.Invoke(Code) ?? DefaultLabel;
     public override string ToString() => Label;
 }
 
 public static class KeyCatalog
 {
+    public static Func<int, string?>? LabelResolver { get; set; }
     public static IReadOnlyList<KeyOption> All { get; } = Build();
     public static bool IsValid(int code) => All.Any(k => k.Code == code);
     public static string Name(int code) => All.FirstOrDefault(k => k.Code == code)?.Label ?? $"VK {code}";

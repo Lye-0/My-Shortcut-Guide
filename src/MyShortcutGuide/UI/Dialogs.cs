@@ -149,6 +149,8 @@ internal sealed class ShortcutDialog : DialogBase
             Content.AutoScrollMinSize = new Size(0, Content.GetRowHeights().Sum() + Content.Padding.Vertical);
             UpdatePreview();
         }
+        InputLanguageChanged += (_, _) => { key.Invalidate(); UpdatePreview(); };
+        Activated += (_, _) => { key.Invalidate(); UpdatePreview(); };
         textMode.CheckedChanged += (_, _) => UpdateMode(); displayText.TextChanged += (_, _) => UpdatePreview();
         UpdateMode(); Shown += (_, _) => { UpdateMode(); name.Focus(); };
     }

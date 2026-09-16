@@ -141,6 +141,8 @@ internal sealed class EditorForm : Form
             if (controller.IsBusy) { e.Cancel = true; return; }
             if (!controller.Document.Settings.CloseToTray) { e.Cancel = true; WindowState = FormWindowState.Minimized; }
         };
+        InputLanguageChanged += (_, _) => RefreshShortcuts();
+        Activated += (_, _) => shortcuts.Invalidate();
         RefreshAll();
         Theme.CompleteLayout(this);
         Disposed += (_, _) => tips.Dispose();
