@@ -7,6 +7,9 @@ dotnet publish (Join-Path $repoRoot 'src/MyShortcutGuide/MyShortcutGuide.csproj'
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed.' }
 Copy-Item -LiteralPath (Join-Path $repoRoot 'README.md'), (Join-Path $repoRoot 'LICENSE') -Destination $destination
 Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/verification.md') -Destination $destination
+$imageDestination = Join-Path $destination 'docs/images'
+New-Item -ItemType Directory -Path $imageDestination -Force | Out-Null
+Copy-Item -Path (Join-Path $repoRoot 'docs/images/*') -Destination $imageDestination
 $zip = "$destination.zip"
 Compress-Archive -Path "$destination/*" -DestinationPath $zip -Force
 $hash = Get-FileHash -LiteralPath $zip -Algorithm SHA256
