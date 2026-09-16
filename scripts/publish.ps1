@@ -10,6 +10,7 @@ Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/verification.md') -Destination
 $imageDestination = Join-Path $destination 'docs/images'
 New-Item -ItemType Directory -Path $imageDestination -Force | Out-Null
 Copy-Item -Path (Join-Path $repoRoot 'docs/images/*') -Destination $imageDestination
+Copy-Item -LiteralPath (Join-Path $repoRoot 'docs/startup-context.md') -Destination (Join-Path $destination 'docs')
 $zip = "$destination.zip"
 Compress-Archive -Path "$destination/*" -DestinationPath $zip -Force
 $hash = Get-FileHash -LiteralPath $zip -Algorithm SHA256
