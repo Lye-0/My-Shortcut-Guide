@@ -229,12 +229,12 @@ internal sealed class ShortcutList : ReorderListBox
         var x = card.X + S(16);
         foreach (var key in item.Parts)
         {
-            var width = TextRenderer.MeasureText(e.Graphics, key, Font).Width + S(12);
+            var width = Math.Min(TextRenderer.MeasureText(e.Graphics, key, Font).Width + S(12), card.Right - S(12) - x);
             if (x + width > card.Right - S(12)) break;
             var cap = new Rectangle(x, card.Bottom - S(33), width, S(24));
             using var fill = new SolidBrush(Theme.Canvas); e.Graphics.FillRectangle(fill, cap);
             using var border = new Pen(Theme.Border); e.Graphics.DrawRectangle(border, cap);
-            TextRenderer.DrawText(e.Graphics, key, Font, cap, Theme.Accent, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix);
+            TextRenderer.DrawText(e.Graphics, key, Font, cap, Theme.Accent, TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter | TextFormatFlags.NoPrefix | TextFormatFlags.EndEllipsis);
             x += width + S(6);
         }
         DrawInsertion(e);

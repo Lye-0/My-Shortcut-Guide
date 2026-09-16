@@ -14,7 +14,7 @@ internal static class Program
         {
             var sections = Enumerable.Range(1, 40).Select(i => new Section { Name = $"セクション {i:00}" }).ToList();
             using var dialog = new ShortcutDialog(sections, sections[0].Id,
-                new ShortcutEntry { Name = "表示検証用サンプル", Description = string.Join(Environment.NewLine, Enumerable.Range(1, 60).Select(i => $"説明文のスクロール確認 {i:00}")), Ctrl = true, KeyCode = 70 }, false);
+                new ShortcutEntry { Name = "表示検証用サンプル", Description = string.Join(Environment.NewLine, Enumerable.Range(1, 60).Select(i => $"説明文のスクロール確認 {i:00}")), Ctrl = true, KeyCode = 70, DisplayText = "右クリックして選択" }, false);
 
             dialog.ShowInTaskbar = true; dialog.ShowDialog(form);
         }));
@@ -41,7 +41,7 @@ internal static class Program
         var trayMenu = new TrayMenu(() => form.Text = "Open Editor", () => form.Text = "Open Shortcut Guide", () => form.Close());
         form.Disposed += (_, _) => trayMenu.Dispose();
         form.Controls.Add(panel); Theme.CompleteLayout(form);
-        form.Shown += (_, _) => form.BeginInvoke(() => trayMenu.Show(form, new Point(260, 220)));
+        form.Shown += (_, _) => form.BeginInvoke(() => panel.Controls.OfType<Button>().First().PerformClick());
         Application.Run(form);
     }
     private static IEnumerable<Control> All(Control parent)

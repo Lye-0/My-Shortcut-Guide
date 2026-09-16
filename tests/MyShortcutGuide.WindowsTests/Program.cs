@@ -45,6 +45,23 @@ internal static class Program
                 Check(result == DialogResult.OK && entry.Ctrl && entry.KeyCode == 70 && entry.Name == "検索: 日本語" && entry.Recommended && dialog.SectionId == sections[0].Id);
                 Console.WriteLine("PASS real shortcut form save, modifiers, main key, section and labels");
             }
+            using (var textDialog = new ShortcutDialog(sections, sections[0].Id, new ShortcutEntry { Name = "文字", DisplayText = "123", Ctrl = true }, false))
+            {
+                textDialog.Shown += (_, _) => textDialog.BeginInvoke(() =>
+                {
+                    var controls = All(textDialog).ToArray();
+                    var mode = controls.OfType<RadioButton>().Single(c => c.Text == "自由テキスト");
+                    var field = controls.OfType<TextBox>().Single(c => c.AccessibleName == "表示テキスト");
+                    var key = controls.OfType<StyledComboBox>().Single(c => c.AccessibleName == "メインキー");
+                    Check(mode.Checked && field.Enabled && !key.Enabled);
+                    controls.OfType<RadioButton>().Single(c => c.Text == "キーの組み合わせ").Checked = true;
+                    Check(!field.Enabled && key.Enabled);
+                    mode.Checked = true; field.Text = "右クリックして選択";
+                    controls.OfType<Button>().Single(c => c.Text == "保存").PerformClick();
+                });
+                Check(textDialog.ShowDialog() == DialogResult.OK && textDialog.Entry.DisplayText == "右クリックして選択");
+            }
+            Console.WriteLine("PASS free text editing, restored mode and keyboard mode switching");
             using (var editor = new EditorForm(new AppController(), () => { }, () => { }))
             {
                 editor.Shown += (_, _) => editor.BeginInvoke(() =>

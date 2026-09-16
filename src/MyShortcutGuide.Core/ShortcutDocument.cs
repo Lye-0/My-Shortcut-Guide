@@ -37,6 +37,11 @@ public sealed class ShortcutDocument
                 if (shortcut.Id == Guid.Empty || !ids.Add(shortcut.Id)) throw new InvalidDataException("ショートカットIDが無効または重複しています。");
                 CheckText(shortcut.Name, "名前", 120, true);
                 CheckText(shortcut.Description, "説明", 2000, false);
+                if (shortcut.DisplayText is not null)
+                {
+                    CheckText(shortcut.DisplayText, "表示テキスト", 120, true);
+                    if (shortcut.DisplayText.Any(char.IsControl)) throw new InvalidDataException("表示テキストは1行で入力してください。");
+                }
                 if (!KeyCatalog.IsValid(shortcut.KeyCode)) throw new InvalidDataException("メインキーが未選択または未対応です。");
             }
         }
@@ -77,11 +82,13 @@ public sealed class ShortcutEntry
     public bool Alt { get; set; }
     [JsonRequired] public int KeyCode { get; set; } = 65;
     public bool Recommended { get; set; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] public string? DisplayText { get; set; }
     [JsonIgnore] public string Gesture => string.Join(" + ", Parts);
     [JsonIgnore] public IEnumerable<string> Parts
     {
         get
         {
+            if (DisplayText is not null) { yield return DisplayText; yield break; }
             if (Win) yield return "Win";
             if (Ctrl) yield return "Ctrl";
             if (Shift) yield return "Shift";

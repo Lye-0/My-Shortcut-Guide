@@ -79,13 +79,15 @@ internal sealed class ShortcutDialog : DialogBase
     private readonly TextBox name, description;
     private readonly StyledComboBox? section;
     private readonly StyledComboBox key;
+    private readonly RadioButton textMode;
+    private readonly TextBox displayText;
     private readonly Guid initialSectionId;
     private readonly CheckBox win, ctrl, shift, alt, recommended;
     private readonly Label preview = Theme.Label("", 18, Theme.Accent);
     public ShortcutEntry Entry { get; }
     public Guid SectionId => section?.SelectedItem is Section selected ? selected.Id : initialSectionId;
     public ShortcutDialog(List<Section> sections, Guid sectionId, ShortcutEntry entry, bool existing)
-        : base(existing ? "ショートカットを編集" : "ショートカットを追加", new Size(640, existing ? 890 : 810))
+        : base(existing ? "ショートカットを編集" : "ショートカットを追加", new Size(640, 850))
     {
         Entry = entry; initialSectionId = sectionId;
         AddContent(Theme.Label(existing ? "ショートカットを編集" : "新しいショートカット", 22), 58);
@@ -98,7 +100,12 @@ internal sealed class ShortcutDialog : DialogBase
         }
         var divider = new Panel { Dock = DockStyle.Fill, BackColor = Theme.Border, Margin = new Padding(0, 12, 0, 11) };
         AddContent(divider, 24);
-        AddContent(Theme.Label("キーの組み合わせ", 12), 38);
+        var keysMode = new RadioButton { Text = "キーの組み合わせ", AutoSize = true, Checked = entry.DisplayText is null, Margin = new Padding(0, 0, 22, 0) };
+        textMode = new RadioButton { Text = "自由テキスト", AutoSize = true, Checked = entry.DisplayText is not null };
+        AddContent(Theme.Row(keysMode, textMode), 38);
+        displayText = Theme.Input("表示テキスト", entry.DisplayText ?? ""); displayText.MaxLength = 120;
+        displayText.PlaceholderText = "例：右クリックして選択";
+        AddField("表示テキスト（ガイドでは枠付きで表示）", displayText, 50);
         win = Modifier("Win", entry.Win); ctrl = Modifier("Ctrl", entry.Ctrl); shift = Modifier("Shift", entry.Shift); alt = Modifier("Alt", entry.Alt);
         AddField("修飾キー", Theme.Row(win, ctrl, shift, alt), 42);
         key = Combo("メインキー"); key.Items.AddRange(KeyCatalog.All.Cast<object>().ToArray()); key.SelectedItem = KeyCatalog.All.First(k => k.Code == entry.KeyCode);
@@ -106,13 +113,14 @@ internal sealed class ShortcutDialog : DialogBase
         key.SelectedIndexChanged += (_, _) => UpdatePreview();
         var record = Theme.Button("キーを記録", RecordKeys);
         AddField("メインキー", Theme.Row(key, record), 49);
-        preview.AutoSize = false; preview.Dock = DockStyle.Fill;
+        preview.AutoSize = false; preview.AutoEllipsis = true; preview.Dock = DockStyle.Fill;
         var result = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Theme.Selected, Padding = new Padding(14, 8, 14, 8), Margin = new Padding(0, 4, 0, 12) };
-        var resultLabel = Theme.Label("組み合わせの結果", 9, Theme.Accent); resultLabel.Dock = DockStyle.Top;
+        var resultLabel = Theme.Label("ガイドに表示する内容", 9, Theme.Accent); resultLabel.Dock = DockStyle.Top;
         result.Controls.Add(preview); result.Controls.Add(resultLabel); AddContent(result, 88);
         recommended = new CheckBox { Text = "おすすめに表示（Recommended）", AutoSize = true, Checked = entry.Recommended }; AddContent(recommended, 40);
         AddButtons(() =>
         {
+            Entry.DisplayText = textMode.Checked ? displayText.Text.Trim() : null;
             Entry.Name = name.Text.Trim(); Entry.Description = description.Text.Trim();
             Entry.Win = win.Checked; Entry.Ctrl = ctrl.Checked; Entry.Shift = shift.Checked; Entry.Alt = alt.Checked;
             Entry.KeyCode = ((KeyOption)key.SelectedItem!).Code; Entry.Recommended = recommended.Checked;
@@ -123,7 +131,14 @@ internal sealed class ShortcutDialog : DialogBase
             }
             catch (InvalidDataException ex) { ErrorLabel.Text = ex.Message; name.Focus(); }
         });
-        UpdatePreview(); Shown += (_, _) => name.Focus();
+        void UpdateMode()
+        {
+            displayText.Enabled = textMode.Checked;
+            foreach (var control in new Control[] { win, ctrl, shift, alt, key, record }) control.Enabled = !textMode.Checked;
+            UpdatePreview();
+        }
+        textMode.CheckedChanged += (_, _) => UpdateMode(); displayText.TextChanged += (_, _) => UpdatePreview();
+        UpdateMode(); Shown += (_, _) => { Content.AutoScrollMinSize = new Size(0, Content.GetRowHeights().Sum() + Content.Padding.Vertical); name.Focus(); };
     }
     private static StyledComboBox Combo(string name) => new()
     {
@@ -136,6 +151,7 @@ internal sealed class ShortcutDialog : DialogBase
     }
     private void UpdatePreview()
     {
+        if (textMode?.Checked == true) { preview.Text = displayText.Text; return; }
         if (key?.SelectedItem is not KeyOption option) return;
         preview.Text = new ShortcutEntry { KeyCode = option.Code, Win = win.Checked, Ctrl = ctrl.Checked, Shift = shift.Checked, Alt = alt.Checked }.Gesture;
     }

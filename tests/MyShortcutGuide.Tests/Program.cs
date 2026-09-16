@@ -37,6 +37,26 @@ try
         store.Save(moved); var restored = store.Load();
         Check(restored.Sections[^1].Id == id && restored.Sections[^1].Shortcuts[^1].Id == shortcutId);
     });
+    Test("free text round trip, literal key escaping and mode switch", () =>
+    {
+        foreach (var text in new[] { "右クリックして選択", "123", "Up", "<Enter>", "引用: \"text\" # note" })
+        {
+            var free = DocumentStore.Clone(doc); var item = free.Sections[0].Shortcuts[0];
+            item.DisplayText = text; item.Win = true; item.Ctrl = true;
+            store.Save(free); var restored = store.Load();
+            Check(restored.Sections[0].Shortcuts[0].Gesture == text);
+            var path = Path.Combine(root, "text-export.json"); DocumentStore.Export(restored, path);
+            Check(DocumentStore.Read(path).Sections[0].Shortcuts[0].DisplayText == text);
+            var yaml = ManifestWriter.Generate(restored);
+            Check(yaml.Contains("Win: false") && yaml.Contains("Ctrl: false"));
+            Check(yaml.Contains(JsonSerializer.Serialize("\u200B" + text)));
+            item.DisplayText = null; Check(item.Gesture.Contains("Win"));
+        }
+        foreach (var invalid in new[] { "", "  ", "line1\nline2", new string('a', 121) })
+        {
+            var free = DocumentStore.Clone(doc); free.Sections[0].Shortcuts[0].DisplayText = invalid; Reject(free.Validate);
+        }
+    });
     Test("export/import round trip", () => { var path = Path.Combine(root, "export.json"); DocumentStore.Export(doc, path); Check(JsonSerializer.Serialize(DocumentStore.Read(path)) == JsonSerializer.Serialize(doc)); });
     Test("malformed JSON leaves original untouched", () => { var before = File.ReadAllText(store.Path); var bad = Path.Combine(root, "bad.json"); File.WriteAllText(bad, "{broken"); Reject(() => DocumentStore.Read(bad)); Check(File.ReadAllText(store.Path) == before); });
     Test("invalid model never overwrites JSON", () => { var before = File.ReadAllText(store.Path); var bad = DocumentStore.Clone(doc); bad.Sections[0].Shortcuts[0].KeyCode = 17; Reject(() => store.Save(bad)); Check(before == File.ReadAllText(store.Path)); });

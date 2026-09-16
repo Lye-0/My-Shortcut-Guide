@@ -26,12 +26,13 @@ public static class ManifestWriter
                 b.AppendLine($"        Description: {Quote(item.Description)}");
                 b.AppendLine($"        Recommended: {Bool(item.Recommended)}");
                 b.AppendLine("        Shortcut:");
-                b.AppendLine($"          - Win: {Bool(item.Win)}");
-                b.AppendLine($"            Ctrl: {Bool(item.Ctrl)}");
-                b.AppendLine($"            Shift: {Bool(item.Shift)}");
-                b.AppendLine($"            Alt: {Bool(item.Alt)}");
-                // Decimal VK codes are intentionally quoted strings. PowerToys resolves them using the keyboard layout.
-                b.AppendLine($"            Keys: [{Quote(item.KeyCode.ToString(System.Globalization.CultureInfo.InvariantCulture))}]");
+                b.AppendLine($"          - Win: {Bool(item.DisplayText is null && item.Win)}");
+                b.AppendLine($"            Ctrl: {Bool(item.DisplayText is null && item.Ctrl)}");
+                b.AppendLine($"            Shift: {Bool(item.DisplayText is null && item.Shift)}");
+                b.AppendLine($"            Alt: {Bool(item.DisplayText is null && item.Alt)}");
+                // A zero-width prefix keeps literal numbers, arrow names and <tokens> from being interpreted as keys.
+                // This adapter-only marker is not stored in the source JSON.
+                b.AppendLine($"            Keys: [{Quote(item.DisplayText is null ? item.KeyCode.ToString(System.Globalization.CultureInfo.InvariantCulture) : "\u200B" + item.DisplayText)}]");
             }
         }
         return b.ToString();
