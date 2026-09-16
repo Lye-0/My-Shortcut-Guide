@@ -105,7 +105,9 @@ internal sealed class ShortcutDialog : DialogBase
         AddContent(Theme.Row(keysMode, textMode), 38);
         displayText = Theme.Input("表示テキスト", entry.DisplayText ?? ""); displayText.MaxLength = 120;
         displayText.PlaceholderText = "例：右クリックして選択";
+        var textStart = Content.RowCount;
         AddField("表示テキスト（ガイドでは枠付きで表示）", displayText, 50);
+        var keyStart = Content.RowCount;
         win = Modifier("Win", entry.Win); ctrl = Modifier("Ctrl", entry.Ctrl); shift = Modifier("Shift", entry.Shift); alt = Modifier("Alt", entry.Alt);
         AddField("修飾キー", Theme.Row(win, ctrl, shift, alt), 42);
         key = Combo("メインキー"); key.Items.AddRange(KeyCatalog.All.Cast<object>().ToArray()); key.SelectedItem = KeyCatalog.All.First(k => k.Code == entry.KeyCode);
@@ -113,6 +115,8 @@ internal sealed class ShortcutDialog : DialogBase
         key.SelectedIndexChanged += (_, _) => UpdatePreview();
         var record = Theme.Button("キーを記録", RecordKeys);
         AddField("メインキー", Theme.Row(key, record), 49);
+        var keyEnd = Content.RowCount;
+        var modeRowHeights = Enumerable.Range(textStart, keyEnd - textStart).ToDictionary(row => row, row => Content.RowStyles[row].Height);
         preview.AutoSize = false; preview.AutoEllipsis = true; preview.Dock = DockStyle.Fill;
         var result = new RoundedPanel { Dock = DockStyle.Fill, BackColor = Theme.Selected, Padding = new Padding(14, 8, 14, 8), Margin = new Padding(0, 4, 0, 12) };
         var resultLabel = Theme.Label("ガイドに表示する内容", 9, Theme.Accent); resultLabel.Dock = DockStyle.Top;
@@ -133,12 +137,20 @@ internal sealed class ShortcutDialog : DialogBase
         });
         void UpdateMode()
         {
-            displayText.Enabled = textMode.Checked;
-            foreach (var control in new Control[] { win, ctrl, shift, alt, key, record }) control.Enabled = !textMode.Checked;
+            Content.SuspendLayout();
+            Content.AutoScrollMinSize = Size.Empty;
+            for (var row = textStart; row < keyEnd; row++)
+            {
+                var visible = row < keyStart ? textMode.Checked : !textMode.Checked;
+                Content.RowStyles[row].Height = visible ? modeRowHeights[row] * (IsHandleCreated ? DeviceDpi / 96f : 1f) : 0;
+                Content.GetControlFromPosition(0, row)!.Visible = visible;
+            }
+            Content.ResumeLayout(true);
+            Content.AutoScrollMinSize = new Size(0, Content.GetRowHeights().Sum() + Content.Padding.Vertical);
             UpdatePreview();
         }
         textMode.CheckedChanged += (_, _) => UpdateMode(); displayText.TextChanged += (_, _) => UpdatePreview();
-        UpdateMode(); Shown += (_, _) => { Content.AutoScrollMinSize = new Size(0, Content.GetRowHeights().Sum() + Content.Padding.Vertical); name.Focus(); };
+        UpdateMode(); Shown += (_, _) => { UpdateMode(); name.Focus(); };
     }
     private static StyledComboBox Combo(string name) => new()
     {

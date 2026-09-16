@@ -53,9 +53,14 @@ internal static class Program
                     var mode = controls.OfType<RadioButton>().Single(c => c.Text == "自由テキスト");
                     var field = controls.OfType<TextBox>().Single(c => c.AccessibleName == "表示テキスト");
                     var key = controls.OfType<StyledComboBox>().Single(c => c.AccessibleName == "メインキー");
-                    Check(mode.Checked && field.Enabled && !key.Enabled);
+                    Check(mode.Checked && field.Visible && !key.Visible);
+                    Check(!controls.OfType<Label>().Single(c => c.Text == "修飾キー").Visible);
+                    Check(!controls.OfType<Button>().Single(c => c.Text == "キーを記録").Visible);
+                    Check(controls.OfType<Label>().Single(c => c.Text == "ガイドに表示する内容").Visible);
                     controls.OfType<RadioButton>().Single(c => c.Text == "キーの組み合わせ").Checked = true;
-                    Check(!field.Enabled && key.Enabled);
+                    Check(!field.Visible && key.Visible);
+                    Check(!controls.OfType<Label>().Single(c => c.Text.StartsWith("表示テキスト（")).Visible);
+                    Check(controls.OfType<Label>().Single(c => c.Text == "ガイドに表示する内容").Visible);
                     mode.Checked = true; field.Text = "右クリックして選択";
                     controls.OfType<Button>().Single(c => c.Text == "保存").PerformClick();
                 });
