@@ -334,4 +334,10 @@ EXEへ反映するには、その後にビルドまたはpublishを実行して�
 - [PowerToys Shortcut Guide — Microsoft Learn](https://learn.microsoft.com/windows/powertoys/shortcut-guide)
 - [PowerToysのマニフェスト仕様](https://github.com/microsoft/PowerToys/blob/main/doc/specs/WinGet%20Manifest%20Keyboard%20Shortcuts%20schema.md)
 
-**MIT License**。利用条件は同梱の `LICENSE` を参照してください。My Shortcut GuideはMicrosoft PowerToysとは独立したアプリです。
+**GNU General Public License v3.0（GPL-3.0-only）**。ライセンス全文は同梱の `LICENSE` を参照してください。
+
+Copyright (c) 2026 My Shortcut Guide contributors.
+
+本アプリの改変・再配布はGPL v3の条件に従います。実行形式を配布する場合は、ライセンスの条件に従って対応するソースコードも提供してください。本アプリは無保証で提供されます。
+
+ソースコード：[Lye-0/My-Shortcut-Guide](https://github.com/Lye-0/My-Shortcut-Guide)。GitHub Releasesで配布する際は、配布物に対応するタグのソースを参照してください。My Shortcut GuideはMicrosoft PowerToysとは独立したアプリです。

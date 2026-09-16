@@ -10,7 +10,7 @@ internal sealed class AboutDialog : DialogBase
     {
         AddAuto(Theme.Label("My Shortcut Guide", 22));
         var version = typeof(AboutDialog).Assembly.GetName().Version;
-        AddContent(Theme.Label($"Version {version?.ToString(3)}  ·  MIT License", 10, Theme.Muted), 36);
+        AddContent(Theme.Label($"Version {version?.ToString(3)}  ·  GPL-3.0-only", 10, Theme.Muted), 36);
         AddContent(Theme.Label("この環境で使用している場所", 12), 38);
         var command = startup.GetCommand();
         copyText ??= Clipboard.SetText;

@@ -5,6 +5,7 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <Deterministic>true</Deterministic>
     <Version>0.2.3</Version>
+    <PackageLicenseExpression>GPL-3.0-only</PackageLicenseExpression>
     <Authors>My Shortcut Guide contributors</Authors>
     <Copyright>Copyright (c) 2026 My Shortcut Guide contributors</Copyright>
   </PropertyGroup>
