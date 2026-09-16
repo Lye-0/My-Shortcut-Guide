@@ -174,6 +174,21 @@ internal static class Program
                 hitForm.ShowDialog();
             }
             Console.WriteLine("PASS selected shortcut ignores blank space and card gaps; activation only inside card; capture released");
+            using (var about = new AboutDialog(new StartupService()))
+            {
+                about.Shown += (_, _) => about.BeginInvoke(() =>
+                {
+                    Check(!All(about).OfType<TextBox>().Any());
+                    Check(about.Details.Contains(AppPaths.Json) && about.Details.Contains(Environment.ProcessPath!));
+                    Check(about.Details.Contains(StartupService.RegistryLocation));
+                    foreach (var label in All(about).OfType<Label>().Where(c => c.AutoSize && c.Visible))
+                        if(label.Height < label.PreferredHeight) throw new Exception($"Clipped: {label.Text}: {label.Height}/{label.PreferredHeight}");
+                    Check(All(about).OfType<Button>().Any(c => c.Text == "情報をまとめてコピー"));
+                    about.Close();
+                });
+                about.ShowDialog();
+            }
+            Console.WriteLine("PASS About displays runtime locations without editable inputs and wraps labels");
             var settings = new AppSettings();
             using (var dialog = new SettingsDialog(settings))
             {

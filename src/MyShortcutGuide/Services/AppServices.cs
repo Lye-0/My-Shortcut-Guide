@@ -15,6 +15,7 @@ internal sealed class StartupService(string? executablePath = null)
 {
     private const string RunPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string Name = "MyShortcutGuide";
+    public static string RegistryLocation => @"HKEY_CURRENT_USER\" + RunPath + "\\" + Name;
     public string? GetCommand() { using var key = Registry.CurrentUser.OpenSubKey(RunPath); return key?.GetValue(Name) as string; }
     public bool IsEnabled => GetCommand() is not null;
     public void Set(bool enabled)

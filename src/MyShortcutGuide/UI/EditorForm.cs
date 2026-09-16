@@ -73,7 +73,16 @@ internal sealed class EditorForm : Form
         globalActions.Controls.Add(guide, 0, 0); globalActions.SetColumnSpan(guide, 2);
         globalActions.Controls.Add(import, 0, 1); globalActions.Controls.Add(export, 1, 1);
         globalActions.Controls.Add(regenerate, 0, 2); globalActions.SetColumnSpan(regenerate, 2);
-        globalActions.Controls.Add(settings, 0, 3); globalActions.Controls.Add(quit, 1, 3);
+        var about = Theme.IconButton("\uE946", "アプリ情報と保存場所", () =>
+        {
+            using var dialog = new AboutDialog(controller.Startup); dialog.ShowDialog(this);
+        });
+        tips.SetToolTip(about, "アプリ情報・保存場所・自動起動の情報");
+        var footerActions = new TableLayoutPanel { Dock = DockStyle.Fill, ColumnCount = 3, RowCount = 1, Margin = Padding.Empty };
+        footerActions.ColumnStyles.Add(new(SizeType.Percent, 50)); footerActions.ColumnStyles.Add(new(SizeType.Percent, 50)); footerActions.ColumnStyles.Add(new(SizeType.Absolute, 38));
+        about.Dock = DockStyle.Fill; about.Margin = new Padding(0, 0, 0, 5);
+        footerActions.Controls.Add(settings, 0, 0); footerActions.Controls.Add(quit, 1, 0); footerActions.Controls.Add(about, 2, 0);
+        globalActions.Controls.Add(footerActions, 0, 3); globalActions.SetColumnSpan(footerActions, 2);
         var resident = Theme.Label("●  バックグラウンドで待機", 9, Theme.Muted); resident.Margin = Padding.Empty;
         globalActions.Controls.Add(resident, 0, 4); globalActions.SetColumnSpan(resident, 2); sidebar.Controls.Add(globalActions, 0, 4);
         tips.SetToolTip(guide, "PowerToys Shortcut Guide を開く");
